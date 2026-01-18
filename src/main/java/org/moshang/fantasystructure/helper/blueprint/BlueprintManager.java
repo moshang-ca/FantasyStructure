@@ -5,7 +5,6 @@ import net.minecraft.resources.ResourceLocation;
 import org.moshang.fantasystructure.Config;
 import org.moshang.fantasystructure.FantasyStructure;
 import org.moshang.fantasystructure.helper.StructurePattern;
-import org.moshang.fantasystructure.developed.TestBlueprint;
 import org.slf4j.Logger;
 
 import java.io.IOException;
@@ -42,11 +41,6 @@ public class BlueprintManager {
         try {
             Files.createDirectories(blueprintDir);
 
-            //This block is a test block
-            if (!containsBlueprintFiles(blueprintDir)) {
-                LOGGER.info("No blueprint files found, creating test blueprints...");
-                TestBlueprint.createAllTestBlueprints(blueprintDir);
-            }
 
             List<Path> files = new ArrayList<>();
             try(DirectoryStream<Path> stream = Files.newDirectoryStream(blueprintDir, "*.fspb")) {

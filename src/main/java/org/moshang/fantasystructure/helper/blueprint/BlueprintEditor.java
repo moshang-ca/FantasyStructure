@@ -32,7 +32,7 @@ public class BlueprintEditor {
         if(EXPORTING_THREAD_POOL != null) return;
         int threadCount = (int) (Math.min(Config.MAX_PROCESSOR.get(), Runtime.getRuntime().availableProcessors()) * 1.5);
         EXPORTING_THREAD_POOL = Executors.newFixedThreadPool(Math.max(threadCount, 1));
-        LOGGER.info("initialized blueprint editor with {} threads free", threadCount);
+        LOGGER.info("Initialized blueprint editor with {} threads free", threadCount);
     }
 
     public static void saveBinary(Path outputFile, int sizeX, int sizeY, int sizeZ,
@@ -90,16 +90,9 @@ public class BlueprintEditor {
                             runLength++;
                         }
 
-                        if (runLength > 3) {
-                            buffer.put((byte) -runLength);
-                            buffer.put(current);
-                            x += runLength;
-                        } else {
-                            for (int i = 0; i < runLength; i++) {
-                                buffer.put(voxels[y][z][x + i]);
-                            }
-                            x += runLength;
-                        }
+                        buffer.put((byte) -runLength);
+                        buffer.put(current);
+                        x += runLength;
                     }
                 }
             }
