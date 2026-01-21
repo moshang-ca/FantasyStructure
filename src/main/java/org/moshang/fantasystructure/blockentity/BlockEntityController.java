@@ -1,5 +1,6 @@
 package org.moshang.fantasystructure.blockentity;
 
+import com.mojang.logging.LogUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -7,6 +8,8 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import org.moshang.fantasystructure.helper.StructurePattern;
 import org.moshang.fantasystructure.helper.blueprint.BlueprintManager;
+import org.moshang.fantasystructure.helper.builder.StructureBuilderManager;
+import org.slf4j.Logger;
 
 public abstract class BlockEntityController extends BlockEntity {
     protected boolean formed = false;
@@ -14,11 +17,22 @@ public abstract class BlockEntityController extends BlockEntity {
     private final ResourceLocation id;
     private int ticks = 0;
 
+    private static final Logger LOGGER = LogUtils.getLogger();
+
     public BlockEntityController(BlockEntityType<?> entityType,
                                  BlockPos pos, BlockState state,
                                  ResourceLocation patternId) {
         super(entityType, pos, state);
         this.id = patternId;
+    }
+
+    @Override
+    public void onLoad() {
+        super.onLoad();
+        if(!level.isClientSide) {
+            initPattern();
+            checkStructure();
+        }
     }
 
     public void tick() {
@@ -44,6 +58,11 @@ public abstract class BlockEntityController extends BlockEntity {
         if (pattern == null) return false;
         formed = pattern.matches(level, worldPosition);
         return formed;
+    }
+
+    public void autoBuild() {
+        LOGGER.info("autoBuild");
+        StructureBuilderManager.startBuild(level, worldPosition, pattern);
     }
 
     public boolean getFormed() {

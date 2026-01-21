@@ -3,16 +3,20 @@ package org.moshang.fantasystructure.helper;
 import com.mojang.logging.LogUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
+import org.moshang.fantasystructure.data.BlockInfo;
 import org.slf4j.Logger;
 
 import java.util.Map;
 
 public class StructurePattern {
     private final Map<BlockPos, BlockInfo> blockPattern;
+    private final BlockPos controllerPos;
+
     private static final Logger LOGGER = LogUtils.getLogger();
 
-    public StructurePattern(Map<BlockPos, BlockInfo> blockPattern) {
+    public StructurePattern(Map<BlockPos, BlockInfo> blockPattern, BlockPos controllerPos) {
         this.blockPattern = blockPattern;
+        this.controllerPos = controllerPos;
     }
 
     public boolean matches(Level level, BlockPos pos) {
@@ -30,5 +34,8 @@ public class StructurePattern {
 
     public Map<BlockPos, BlockInfo> getBlockPattern() {
         return blockPattern;
+    }
+    public BlockPos getControllerPos() {
+        return controllerPos;
     }
 }

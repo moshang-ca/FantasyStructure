@@ -1,8 +1,7 @@
-package org.moshang.fantasystructure.helper;
+package org.moshang.fantasystructure.data;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
@@ -87,5 +86,9 @@ public class BlockInfo {
 
     public BlockState getExpectedState() {
         return expectedState;
+    }
+
+    public boolean isAir() {
+        return expectedState == null || expectedState.isAir();
     }
 }

@@ -3,13 +3,12 @@ package org.moshang.fantasystructure.helper.blueprint;
 import com.mojang.logging.LogUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.fml.ModList;
-import net.minecraftforge.registries.ForgeRegistries;
-import org.moshang.fantasystructure.helper.BlockInfo;
+import org.moshang.fantasystructure.data.BlockInfo;
 import org.moshang.fantasystructure.helper.StructurePattern;
+import org.moshang.fantasystructure.data.blueprint.StateCache;
 import org.slf4j.Logger;
 
 import java.io.*;
@@ -19,7 +18,6 @@ import java.nio.channels.FileChannel;
 import java.nio.file.Path;
 import java.util.*;
 
-@SuppressWarnings("removal")
 public class Blueprint {
     private final ResourceLocation id;
     private final String name;
@@ -36,7 +34,8 @@ public class Blueprint {
 
     private static final Logger LOGGER = LogUtils.getLogger();
 
-    private Blueprint(ResourceLocation id, String name, int sizeX, int sizeY, int sizeZ, BlockPos controllerOffset, List<String> requiredMods) {
+    private Blueprint(ResourceLocation id, String name, int sizeX, int sizeY, int sizeZ,
+                      BlockPos controllerOffset, List<String> requiredMods) {
         this.id = id;
         this.name = name;
         this.sizeX = sizeX;
@@ -94,7 +93,7 @@ public class Blueprint {
             }
 
             channel.position(128);
-            BlockState[] typeTable = loadTypeTable(channel, typeCount);
+            BlockState[] typeTable = loadStateTable(channel, typeCount);
 
             Blueprint bp = new Blueprint(
                     id, file.getFileName().toString().replace(".fspb", ""),
@@ -110,7 +109,7 @@ public class Blueprint {
         }
     }
 
-    private static BlockState[] loadTypeTable(FileChannel channel, int typeCount) throws IOException, BlueprintLoadException {
+    private static BlockState[] loadStateTable(FileChannel channel, int typeCount) throws IOException, BlueprintLoadException {
         if(typeCount <= 0 || typeCount > 255)
             throw new BlueprintLoadException("Invalid blueprint typeCount: " + typeCount);
 
@@ -119,30 +118,31 @@ public class Blueprint {
         channel.read(typeBuffer);
         typeBuffer.flip();
 
-        BlockState[] typeTable = new BlockState[typeCount];
+        BlockState[] stateTable = new BlockState[typeCount];
         List<String> missingBlocks = new ArrayList<>();
 
         for(int i = 0; i < typeCount; i++) {
             if(typeBuffer.remaining() < 1)
                 throw new BlueprintLoadException("Type table truncated");
 
-            int idLen = typeBuffer.get() & 0xFF;
-            if(typeBuffer.remaining() < idLen + 1)
+            int stateLen = typeBuffer.get() & 0xFF;
+            if(typeBuffer.remaining() < stateLen + 1)
                 throw new BlueprintLoadException("Type table entry truncated");
 
-            byte[] idBytes = new byte[idLen];
-            typeBuffer.get(idBytes);
+            byte[] stateBytes = new byte[stateLen];
+            typeBuffer.get(stateBytes);
             byte props = typeBuffer.get();
 
-            String blockId = new String(idBytes);
-            Block block = ForgeRegistries.BLOCKS.getValue(new ResourceLocation(blockId));
+            String blockStateString = new String(stateBytes);
+            BlockState blockState = StateCache.parse(blockStateString);
 
-            if(block == null || block == Blocks.AIR){
-                missingBlocks.add(blockId);
+            if(!blockStateString.equals("Block{minecraft:air}")
+                    && blockState == Blocks.AIR.defaultBlockState()){
+                missingBlocks.add(blockStateString);
                 continue;
             }
 
-            typeTable[i] = block.defaultBlockState();
+            stateTable[i] = blockState;
         }
 
         if(!missingBlocks.isEmpty()) {
@@ -151,7 +151,7 @@ public class Blueprint {
                     (missingBlocks.size() > 5 ? "..." : ""));
         }
 
-        return typeTable;
+        return stateTable;
     }
 
     public Map<BlockPos, BlockInfo> getPattern() {
@@ -177,7 +177,7 @@ public class Blueprint {
     }
 
     public StructurePattern toStructurePattern() {
-        return new StructurePattern(Collections.unmodifiableMap(getPattern()));
+        return new StructurePattern(Collections.unmodifiableMap(getPattern()), controllerOffset);
     }
 
     private Map<BlockPos, BlockInfo> loadPatternInternal() throws IOException {
@@ -225,14 +225,13 @@ public class Blueprint {
                     }
 
                     if(typeIdx > 0 && typeIdx <= blockTypeTable.length) {
-                        BlockState state = blockTypeTable[typeIdx - 1];
+                        BlockState state = blockTypeTable[typeIdx];
                         if(state != null && !state.is(Blocks.AIR)) {
                             for(int i = 0; i < count; ++i) {
                                 int curX = x + i;
-                                if(curX > sizeX) break;
+                                if(curX >= sizeX) break;
 
                                 BlockPos pos = new BlockPos(curX, y, z).subtract(controllerOffset);
-                                LOGGER.info("pos {}, with offset {}, block {}", new BlockPos(curX, y, z), pos, state);
                                 pattern.put(pos, new BlockInfo(state));
                             }
                         }

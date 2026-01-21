@@ -1,7 +1,6 @@
 package org.moshang.fantasystructure;
 
 import com.mojang.logging.LogUtils;
-import net.minecraft.client.Minecraft;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.RegisterCommandsEvent;
@@ -18,6 +17,7 @@ import net.minecraftforge.fml.loading.FMLPaths;
 import org.moshang.fantasystructure.developed.Command;
 import org.moshang.fantasystructure.helper.blueprint.BlueprintEditor;
 import org.moshang.fantasystructure.helper.blueprint.BlueprintManager;
+import org.moshang.fantasystructure.helper.builder.StructureBuilderManager;
 import org.slf4j.Logger;
 
 // The value here should match an entry in the META-INF/mods.toml file
@@ -34,12 +34,12 @@ public class FantasyStructure {
         FSRegistry.BLOCKS.register(modEventBus);
         FSRegistry.ITEMS.register(modEventBus);
         MinecraftForge.EVENT_BUS.register(this);
+        MinecraftForge.EVENT_BUS.register(StructureBuilderManager.class);
         MinecraftForge.EVENT_BUS.addListener(this::commandRegister);
         ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, Config.SPEC);
     }
 
     private void commonSetup(final FMLCommonSetupEvent event) {
-        LOGGER.info("HELLO FROM COMMON SETUP");
         event.enqueueWork(() -> {
             BlueprintManager.init(FMLPaths.CONFIGDIR.get());
             BlueprintEditor.init();
@@ -48,8 +48,6 @@ public class FantasyStructure {
 
     @SubscribeEvent
     public void onServerStarting(ServerStartingEvent event) {
-        // Do something when the server starts
-        LOGGER.info("HELLO from server starting");
     }
 
     public void commandRegister(RegisterCommandsEvent event) {
@@ -61,9 +59,6 @@ public class FantasyStructure {
 
         @SubscribeEvent
         public static void onClientSetup(FMLClientSetupEvent event) {
-            // Some client setup code
-            LOGGER.info("HELLO FROM CLIENT SETUP");
-            LOGGER.info("MINECRAFT NAME >> {}", Minecraft.getInstance().getUser().getName());
         }
     }
 }

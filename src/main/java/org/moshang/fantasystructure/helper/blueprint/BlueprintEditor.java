@@ -2,12 +2,9 @@ package org.moshang.fantasystructure.helper.blueprint;
 
 import com.mojang.logging.LogUtils;
 import net.minecraft.core.BlockPos;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.registries.ForgeRegistries;
 import org.moshang.fantasystructure.Config;
 import org.moshang.fantasystructure.blockentity.BlockEntityController;
 import org.slf4j.Logger;
@@ -22,7 +19,6 @@ import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-@SuppressWarnings("removal")
 public class BlueprintEditor {
     private static ExecutorService EXPORTING_THREAD_POOL;
 
@@ -36,7 +32,7 @@ public class BlueprintEditor {
     }
 
     public static void saveBinary(Path outputFile, int sizeX, int sizeY, int sizeZ,
-                                  byte[][][] voxels, Map<String, BlockState> blockTypeTable,
+                                  byte[][][] voxels, List<String> blockStateTable,
                                   Set<String> modDependencies, BlockPos controllerOffset) throws IOException {
         try(FileOutputStream fos = new FileOutputStream(outputFile.toFile());
             FileChannel channel = fos.getChannel()) {
@@ -49,7 +45,7 @@ public class BlueprintEditor {
             buffer.putShort((short) sizeY);
             buffer.putShort((short) sizeZ);
             buffer.putInt(0);
-            buffer.putShort((short) blockTypeTable.size());
+            buffer.putShort((short) blockStateTable.size());
             buffer.put((byte) 0);
             buffer.put((byte) modDependencies.size());
             buffer.putShort((short) controllerOffset.getX());
@@ -66,11 +62,11 @@ public class BlueprintEditor {
                 buffer.put((byte) 0);
             }
 
-            List<String> platte = new ArrayList<>(blockTypeTable.keySet());
-            for(String blockId : platte) {
-                byte[] idBytes = blockId.getBytes();
-                buffer.put((byte) idBytes.length);
-                buffer.put(idBytes);
+            List<String> platte = blockStateTable;
+            for(String blockState : platte) {
+                byte[] stateBytes = blockState.getBytes();
+                buffer.put((byte) stateBytes.length);
+                buffer.put(stateBytes);
                 buffer.put((byte) 0);
             }
 
@@ -111,11 +107,11 @@ public class BlueprintEditor {
         }
 
         BlockPos controllerOffset = controllerPos.subtract(minCorner);
-        Set<String> modDependencies = extractModDependencies(info.blockTypeTable().keySet());
+        Set<String> modDependencies = extractModDependencies(new HashSet<>(info.blockStateTable()));
         saveBinary(
                 outputFile,
                 info.sizeX(), info.sizeY(), info.sizeZ(),
-                info.voxels(), info.blockTypeTable(), modDependencies, controllerOffset
+                info.voxels(), info.blockStateTable(), modDependencies, controllerOffset
         );
         return true;
     }
@@ -146,6 +142,10 @@ public class BlueprintEditor {
         Set<String> modIds = new HashSet<>();
         for (String blockId : blockIds) {
             if (blockId.contains(":")) {
+                blockId = blockId.substring(
+                        blockId.indexOf('{') + 1,
+                        blockId.indexOf('}')
+                );
                 String modId = blockId.split(":")[0];
                 if (!"minecraft".equals(modId)) {
                     modIds.add(modId);
@@ -185,7 +185,7 @@ public class BlueprintEditor {
                     BlockEntity be = level.getBlockEntity(worldPos);
 
                     if(!hasController) {
-                        if(be instanceof BlockEntityController controller) {
+                        if(be instanceof BlockEntityController) {
                             controllerPos = worldPos;
                             hasController = true;
                         }
@@ -195,40 +195,35 @@ public class BlueprintEditor {
                         voxels[y][z][x] = 0;
                         continue;
                     }
-
-                    ResourceLocation blockId = ForgeRegistries.BLOCKS.getKey(blockState.getBlock());
-                    if(blockId == null) {
-                        voxels[y][z][x] = 0;
-                        continue;
-                    }
-
-                    String blockIdStr = blockId.toString();
-                    Byte index = blockIdToIndex.get(blockIdStr);
+                    String blockStateStr = blockState.toString();
+                    Byte index = blockIdToIndex.get(blockStateStr);
                     if(index == null) {
                         index = nextIndex++;
                         if(index == 0) {
                             index = nextIndex++;
                         }
-                        blockIdToIndex.put(blockIdStr, index);
+                        blockIdToIndex.put(blockStateStr, index);
                     }
                     voxels[y][z][x] = index;
                 }
             }
         }
 
-        Map<String, BlockState> blockTypeTable = new LinkedHashMap<>();
-        for(Map.Entry<String, Byte> entry : blockIdToIndex.entrySet()) {
-            String blockId = entry.getKey();
-            Block block = ForgeRegistries.BLOCKS.getValue(new ResourceLocation(blockId));
-            if(block != null) {
-                blockTypeTable.put(blockId, block.defaultBlockState());
-            }
-        }
+        List<String> blockStateTable = new ArrayList<>(blockIdToIndex.size() + 1);
+        blockStateTable.add(0, "Block{minecraft:air}");
+        blockIdToIndex.entrySet().stream()
+                .sorted(Map.Entry.comparingByValue())
+                .forEachOrdered(entry -> {
+                    while(blockStateTable.size() <= entry.getValue()) {
+                        blockStateTable.add(null);
+                    }
+                    blockStateTable.set(entry.getValue(), entry.getKey());
+                });
 
-        return new ExtractionInfo(voxels, blockTypeTable, minCorner, controllerPos, sizeX, sizeY, sizeZ);
+        return new ExtractionInfo(voxels, blockStateTable, minCorner, controllerPos, sizeX, sizeY, sizeZ);
     }
 
-    private record ExtractionInfo(byte[][][] voxels, Map<String, BlockState> blockTypeTable, BlockPos minCorner,
+    private record ExtractionInfo(byte[][][] voxels, List<String> blockStateTable, BlockPos minCorner,
                                   BlockPos controllerPos, int sizeX, int sizeY, int sizeZ) {
     }
 }
