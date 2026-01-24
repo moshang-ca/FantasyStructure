@@ -108,14 +108,16 @@ public class BlueprintManager {
         return get(id).map(Blueprint::toStructurePattern).orElse(null);
     }
 
+    public static Map<ResourceLocation, Integer> getMaterial(ResourceLocation id) {
+        return get(id).map(Blueprint::getMaterialMap).orElse(null);
+    }
+
     public static Collection<Blueprint> getAll() {
         return Collections.unmodifiableCollection(REGISTRY.values());
     }
-
     public static List<ResourceLocation> getAvailableBlueprintIds() {
         return new ArrayList<>(REGISTRY.keySet());
     }
-
     public static int getLoadedCounts() {
         return loadedCounts;
     }

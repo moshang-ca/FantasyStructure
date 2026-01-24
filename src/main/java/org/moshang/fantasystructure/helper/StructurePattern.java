@@ -33,6 +33,7 @@ public class StructurePattern {
     }
 
     public Map<BlockPos, BlockInfo> getBlockPattern() {
+        LOGGER.debug("blockPattern is {}", blockPattern);
         return blockPattern;
     }
     public BlockPos getControllerPos() {

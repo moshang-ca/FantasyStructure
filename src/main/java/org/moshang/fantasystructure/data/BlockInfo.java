@@ -52,7 +52,6 @@ public class BlockInfo {
 
         if(expectedState != null) {
             if(!state.equals(expectedState)) {
-
                 return false;
             }
             return checkIfNeed(level, pos);

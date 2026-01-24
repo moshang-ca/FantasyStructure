@@ -9,6 +9,7 @@ import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import org.moshang.fantasystructure.developed.BlockTestController;
 import org.moshang.fantasystructure.developed.BETestController;
+import org.moshang.fantasystructure.item.ItemAutoBuilder;
 
 public class FSRegistry {
     public static final DeferredRegister<Block> BLOCKS = DeferredRegister.create(
@@ -49,6 +50,14 @@ public class FSRegistry {
             () -> new BlockItem(
                     TEST_CONTROLLER.get(),
                     new Item.Properties()
+            )
+    );
+
+    public static final RegistryObject<Item> AUTO_BUILDER = ITEMS.register(
+            "auto_builder",
+            () -> new ItemAutoBuilder(
+                    new Item.Properties()
+                            .stacksTo(1)
             )
     );
 

@@ -2,10 +2,15 @@ package org.moshang.fantasystructure.helper.builder;
 
 import com.mojang.logging.LogUtils;
 import net.minecraft.core.BlockPos;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraftforge.registries.ForgeRegistries;
+import org.moshang.fantasystructure.Config;
 import org.moshang.fantasystructure.data.BlockInfo;
 import org.moshang.fantasystructure.helper.StructurePattern;
+import org.moshang.fantasystructure.item.ItemAutoBuilder;
 import org.slf4j.Logger;
 
 import java.util.HashMap;
@@ -16,17 +21,20 @@ import java.util.Queue;
 public class StructureBuilder {
     private final Level level;
     private final BlockPos center;
+    private final ItemStack builderStack;
     private final Queue<Map.Entry<BlockPos, BlockInfo>> taskQueue = new LinkedList<>();
-    private final Map<BlockPos, BlockInfo> occupiedBlock = new HashMap<>();
+    private final Map<BlockPos, BlockInfo> failedBlock = new HashMap<>();
 
     private boolean building = false;
+    private boolean isCreative = false;
 
-    private static final int BLOCKS_PER_TICK = 8;
+    private static final int BLOCKS_PER_TICK = Config.MAX_BLOCK_PLACE_PER_TICK.get();
     private static final Logger LOGGER = LogUtils.getLogger();
 
-    public StructureBuilder(Level level, BlockPos center, StructurePattern pattern) {
+    public StructureBuilder(Level level, BlockPos center, StructurePattern pattern, ItemStack builderStack) {
         this.level = level;
         this.center = center;
+        this.builderStack = builderStack;
 
         Map<BlockPos, BlockInfo> patternMap = pattern.getBlockPattern();
 
@@ -39,10 +47,11 @@ public class StructureBuilder {
         }
     }
 
-    public void start() {
+    public void start(boolean isCreative) {
         if(!building) {
             building = true;
         }
+        this.isCreative = isCreative;
     }
 
     public void tick() {
@@ -51,8 +60,6 @@ public class StructureBuilder {
         int placed = 0;
 
         while(!taskQueue.isEmpty() && placed < BLOCKS_PER_TICK) {
-            LOGGER.debug("remaining {} blocks", taskQueue.size());
-            LOGGER.debug("occupied {} blocks", occupiedBlock.size());
             Map.Entry<BlockPos, BlockInfo> entry = taskQueue.poll();
             BlockPos worldPos = center.offset(entry.getKey());
             BlockState targetState = entry.getValue().getExpectedState();
@@ -64,19 +71,27 @@ public class StructureBuilder {
             BlockState state = level.getBlockState(worldPos);
             if(!state.isAir()) {
                 if(!state.equals(targetState)) {
-                    LOGGER.debug("skip one block");
-                    occupiedBlock.put(entry.getKey(), entry.getValue());
+                    failedBlock.put(entry.getKey(), entry.getValue());
                     placed++;
                 }
                 continue;
             }
 
-            if(level.setBlock(worldPos, targetState, 2)) {
-                placed++;
+            if(!isCreative) {
+                ResourceLocation blockId = ForgeRegistries.BLOCKS.getKey(targetState.getBlock());
+                ItemStack materialStack = ItemAutoBuilder.shrinkMaterials(level, builderStack, blockId);
+                if(materialStack != null) {
+                    if (!level.setBlock(worldPos, targetState, 2)) {
+                        materialStack.shrink(1);
+                        failedBlock.put(entry.getKey(), entry.getValue());
+                    }
+                }
             } else {
-                taskQueue.offer(entry);
-                LOGGER.debug("task add in queue again. block {}, worldPos: {}", entry.getValue().getExpectedState(), worldPos);
+                if (!level.setBlock(worldPos, targetState, 2)) {
+                    failedBlock.put(entry.getKey(), entry.getValue());
+                }
             }
+            placed++;
         }
 
         if(taskQueue.isEmpty()) {
@@ -86,9 +101,9 @@ public class StructureBuilder {
 
     private void complete() {
         building = false;
-        if(!occupiedBlock.isEmpty()) {
-            occupiedBlock.entrySet().forEach(taskQueue::offer);
-            occupiedBlock.clear();
+        if(!failedBlock.isEmpty()) {
+            failedBlock.entrySet().forEach(taskQueue::offer);
+            failedBlock.clear();
             StructureBuilderManager.addIncomplete(this);
         } else {
             StructureBuilderManager.removeIncomplete(this);

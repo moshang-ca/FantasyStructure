@@ -6,12 +6,14 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.fml.ModList;
+import net.minecraftforge.registries.ForgeRegistries;
 import org.moshang.fantasystructure.data.BlockInfo;
-import org.moshang.fantasystructure.helper.StructurePattern;
 import org.moshang.fantasystructure.data.blueprint.StateCache;
+import org.moshang.fantasystructure.helper.StructurePattern;
 import org.slf4j.Logger;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.channels.FileChannel;
@@ -26,6 +28,7 @@ public class Blueprint {
     private final List<String> requiredMods;
 
     private volatile Map<BlockPos, BlockInfo> patternCache;
+    private volatile Map<ResourceLocation, Integer> materialMap;
     private volatile BlockState[] blockTypeTable;
     private Path binaryPath;
 
@@ -199,14 +202,21 @@ public class Blueprint {
             voxelData.flip();
 
             Map<BlockPos, BlockInfo> pattern = new HashMap<>();
-            decodeRLEToPattern(voxelData, pattern);
+            Map<ResourceLocation, Integer> tempMaterialMap = new HashMap<>();
+            decodeRLEToPattern(voxelData, pattern, tempMaterialMap);
+
+            if(!tempMaterialMap.isEmpty()) {
+                materialMap = tempMaterialMap;
+            }
+
             return pattern;
         } catch (Exception e) {
             throw e;
         }
     }
 
-    private void decodeRLEToPattern(ByteBuffer data, Map<BlockPos, BlockInfo> pattern) {
+    private void decodeRLEToPattern(ByteBuffer data, Map<BlockPos, BlockInfo> pattern,
+                                    Map<ResourceLocation, Integer> materialMap) {
         int voxelIndex = 0;
 
         for(int y = 0; y < sizeY && voxelIndex < data.limit(); ++y) {
@@ -235,12 +245,22 @@ public class Blueprint {
                                 pattern.put(pos, new BlockInfo(state));
                             }
                         }
+                        if(materialMap != null) {
+                            ResourceLocation blockId = ForgeRegistries.BLOCKS.getKey(state.getBlock());
+                            if(blockId != null) {
+                                materialMap.merge(blockId, count, Integer::sum);
+                            }
+                        }
                     }
 
                     if(count > 1) x += (count - 1);
                 }
             }
         }
+    }
+
+    public Map<ResourceLocation, Integer> getMaterialMap() {
+        return materialMap;
     }
 
     public static class BlueprintLoadException extends RuntimeException {

@@ -7,6 +7,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.Property;
 import net.minecraftforge.registries.ForgeRegistries;
+import org.moshang.fantasystructure.util.StringParser;
 import org.slf4j.Logger;
 
 import java.util.HashMap;
@@ -30,14 +31,9 @@ public class StateCache {
             String blockId;
             Map<String, String> properties = new HashMap<>();
 
-            blockId = stateString.substring(
-                    stateString.indexOf('{') + 1,
-                    stateString.indexOf('}')
-            );
+            blockId = StringParser.parseStringByChar(stateString, '{', '}');
             if (stateString.contains("[")) {
-                String propString = stateString.substring(
-                        stateString.indexOf('[') + 1, stateString.lastIndexOf(']')
-                );
+                String propString = StringParser.parseStringByChar(stateString, '[', ']');
 
                 for (String propPair : propString.split(",")) {
                     String[] kv = propPair.split("=");

@@ -1,6 +1,7 @@
 package org.moshang.fantasystructure.helper.builder;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -32,15 +33,15 @@ public class StructureBuilderManager {
         }
     }
 
-    public static void startBuild(Level level, BlockPos center, StructurePattern pattern) {
-        StructureBuilder sbuilder = getOrCreate(level, center, pattern);
-        sbuilder.start();
+    public static void startBuild(Level level, BlockPos center, StructurePattern pattern, ItemStack builderStack, boolean isCreative) {
+        StructureBuilder sbuilder = getOrCreate(level, center, pattern, builderStack);
+        sbuilder.start(isCreative);
         BUILDERS.add(sbuilder);
     }
 
-    public static StructureBuilder getOrCreate(Level level, BlockPos center, StructurePattern pattern) {
+    public static StructureBuilder getOrCreate(Level level, BlockPos center, StructurePattern pattern, ItemStack builderStack) {
         StructureBuilder sbuilder = INCOMPLETE.remove(center);
-        return sbuilder == null ? new StructureBuilder(level, center, pattern) : sbuilder;
+        return sbuilder == null ? new StructureBuilder(level, center, pattern, builderStack) : sbuilder;
     }
 
     public static void addIncomplete(StructureBuilder builder) {
