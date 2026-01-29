@@ -1,6 +1,7 @@
 package org.moshang.fantasystructure.helper.blueprint;
 
 import com.mojang.logging.LogUtils;
+import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
 import org.moshang.fantasystructure.Config;
 import org.moshang.fantasystructure.FantasyStructure;
@@ -104,8 +105,9 @@ public class BlueprintManager {
         return Optional.ofNullable(REGISTRY.get(id));
     }
 
-    public static StructurePattern getPattern(ResourceLocation id) {
-        return get(id).map(Blueprint::toStructurePattern).orElse(null);
+
+    public static StructurePattern getPattern(ResourceLocation id, Direction facing) {
+        return get(id).map(blueprint -> blueprint.toStructurePattern(facing)).orElse(null);
     }
 
     public static Map<ResourceLocation, Integer> getMaterial(ResourceLocation id) {

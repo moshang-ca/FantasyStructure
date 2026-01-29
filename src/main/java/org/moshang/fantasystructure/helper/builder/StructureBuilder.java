@@ -36,7 +36,7 @@ public class StructureBuilder {
         this.center = center;
         this.builderStack = builderStack;
 
-        Map<BlockPos, BlockInfo> patternMap = pattern.getBlockPattern();
+        Map<BlockPos, BlockInfo> patternMap = pattern.blockPattern();
 
         for(Map.Entry<BlockPos, BlockInfo> entry : patternMap.entrySet()) {
             BlockPos relativePos = entry.getKey();

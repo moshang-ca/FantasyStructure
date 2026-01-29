@@ -2,11 +2,14 @@ package org.moshang.fantasystructure.helper.blueprint;
 
 import com.mojang.logging.LogUtils;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraftforge.fml.ModList;
 import net.minecraftforge.registries.ForgeRegistries;
+import org.moshang.fantasystructure.block.BlockControllerBase;
 import org.moshang.fantasystructure.data.BlockInfo;
 import org.moshang.fantasystructure.data.blueprint.StateCache;
 import org.moshang.fantasystructure.helper.StructurePattern;
@@ -25,6 +28,7 @@ public class Blueprint {
     private final String name;
     private final int sizeX, sizeY, sizeZ;
     private final BlockPos controllerOffset;
+    private final Direction originalDir;
     private final List<String> requiredMods;
 
     private volatile Map<BlockPos, BlockInfo> patternCache;
@@ -38,13 +42,14 @@ public class Blueprint {
     private static final Logger LOGGER = LogUtils.getLogger();
 
     private Blueprint(ResourceLocation id, String name, int sizeX, int sizeY, int sizeZ,
-                      BlockPos controllerOffset, List<String> requiredMods) {
+                      BlockPos controllerOffset, List<String> requiredMods, Direction originalDir) {
         this.id = id;
         this.name = name;
         this.sizeX = sizeX;
         this.sizeY = sizeY;
         this.sizeZ = sizeZ;
         this.controllerOffset = controllerOffset;
+        this.originalDir = originalDir;
         this.requiredMods = requiredMods;
     }
 
@@ -98,10 +103,17 @@ public class Blueprint {
             channel.position(128);
             BlockState[] typeTable = loadStateTable(channel, typeCount);
 
+            Direction dir = Direction.NORTH;
+            for(BlockState blockState : typeTable) {
+                if(blockState.getBlock() instanceof BlockControllerBase) {
+                    dir = blockState.getValue(BlockStateProperties.HORIZONTAL_FACING);
+                    break;
+                }
+            }
             Blueprint bp = new Blueprint(
-                    id, file.getFileName().toString().replace(".fspb", ""),
-                    sizeX, sizeY, sizeZ, controllerOffset, dependencies
-            );
+                                id, file.getFileName().toString().replace(".fspb", ""),
+                                sizeX, sizeY, sizeZ, controllerOffset, dependencies, dir
+                        );
             bp.blockTypeTable = typeTable;
             bp.binaryPath = file;
 
@@ -179,8 +191,8 @@ public class Blueprint {
         return patternCache;
     }
 
-    public StructurePattern toStructurePattern() {
-        return new StructurePattern(Collections.unmodifiableMap(getPattern()), controllerOffset);
+    public StructurePattern toStructurePattern(Direction currentDir) {
+        return StructurePattern.createRotated(getPattern(), controllerOffset, originalDir, currentDir);
     }
 
     private Map<BlockPos, BlockInfo> loadPatternInternal() throws IOException {
@@ -211,7 +223,7 @@ public class Blueprint {
 
             return pattern;
         } catch (Exception e) {
-            throw e;
+            throw new BlueprintLoadException("Blueprint load failed: ", e);
         }
     }
 

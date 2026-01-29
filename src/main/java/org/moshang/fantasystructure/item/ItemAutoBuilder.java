@@ -29,8 +29,8 @@ import java.util.List;
 public class ItemAutoBuilder extends Item {
     private static final String BUILDER_DATA = FantasyStructure.MODID + "_builder_data";
 
-    public ItemAutoBuilder(Properties props) {
-        super(props);
+    public ItemAutoBuilder(int stackTo) {
+        super(new Item.Properties().stacksTo(stackTo));
     }
 
     @Override

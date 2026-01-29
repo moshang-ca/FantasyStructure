@@ -14,10 +14,13 @@ import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.fml.loading.FMLPaths;
-import org.moshang.fantasystructure.developed.Command;
+import org.moshang.fantasystructure.command.Command;
 import org.moshang.fantasystructure.helper.blueprint.BlueprintEditor;
 import org.moshang.fantasystructure.helper.blueprint.BlueprintManager;
 import org.moshang.fantasystructure.helper.builder.StructureBuilderManager;
+import org.moshang.fantasystructure.registry.FSBlockEntities;
+import org.moshang.fantasystructure.registry.FSBlocks;
+import org.moshang.fantasystructure.registry.FSItems;
 import org.slf4j.Logger;
 
 // The value here should match an entry in the META-INF/mods.toml file
@@ -30,9 +33,9 @@ public class FantasyStructure {
     public FantasyStructure() {
         IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
         modEventBus.addListener(this::commonSetup);
-        FSRegistry.BLOCK_ENTITIES.register(modEventBus);
-        FSRegistry.BLOCKS.register(modEventBus);
-        FSRegistry.ITEMS.register(modEventBus);
+
+        init(modEventBus);
+
         MinecraftForge.EVENT_BUS.register(this);
         MinecraftForge.EVENT_BUS.register(StructureBuilderManager.class);
         MinecraftForge.EVENT_BUS.addListener(this::commandRegister);
@@ -44,6 +47,12 @@ public class FantasyStructure {
             BlueprintManager.init(FMLPaths.CONFIGDIR.get());
             BlueprintEditor.init();
         });
+    }
+
+    private void init(IEventBus modEventBus) {
+        FSBlocks.BLOCKS.register(modEventBus);
+        FSBlockEntities.BLOCK_ENTITIES.register(modEventBus);
+        FSItems.ITEMS.register(modEventBus);
     }
 
     @SubscribeEvent
