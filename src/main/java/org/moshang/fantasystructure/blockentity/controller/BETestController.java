@@ -6,7 +6,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import org.moshang.fantasystructure.FantasyStructure;
-import org.moshang.fantasystructure.blockentity.BlockEntityControllerBase;
+import org.moshang.fantasystructure.api.blockentity.BlockEntityControllerBase;
 import org.moshang.fantasystructure.registry.FSBlockEntities;
 import org.slf4j.Logger;
 

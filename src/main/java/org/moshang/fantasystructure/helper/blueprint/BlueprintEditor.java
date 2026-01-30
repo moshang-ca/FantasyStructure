@@ -6,7 +6,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import org.moshang.fantasystructure.Config;
-import org.moshang.fantasystructure.blockentity.BlockEntityControllerBase;
+import org.moshang.fantasystructure.api.blockentity.BlockEntityControllerBase;
 import org.slf4j.Logger;
 
 import java.io.FileOutputStream;
@@ -116,25 +116,18 @@ public class BlueprintEditor {
         return true;
     }
 
-    /***
-     * This function is used to export a fspb file,
-     * converting it into json file
-     */
-    public static void exportFSPB(String name) {
-        if(!name.contains(".fspb")) {
-            name = name + ".fspb";
-        }
-    }
 
     /**
-     * This function is used to export fspb files in batch,
+     * This function is used to export fspb files,
      * converting them into json file
      * @param names All fspb file name you need to export,
      *              needn't have name extension.
      */
-    public static void exportFSPB(String[] names) {
+    public static void exportToJson(String... names) {
         for(String name : names) {
-            exportFSPB(name);
+            if(!name.contains(".fspb")) {
+                name = name + ".fspb";
+            }
         }
     }
 

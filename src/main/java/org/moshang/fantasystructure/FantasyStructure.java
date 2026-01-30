@@ -1,6 +1,7 @@
 package org.moshang.fantasystructure;
 
 import com.mojang.logging.LogUtils;
+import net.minecraft.client.gui.screens.MenuScreens;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.RegisterCommandsEvent;
@@ -18,9 +19,12 @@ import org.moshang.fantasystructure.command.Command;
 import org.moshang.fantasystructure.helper.blueprint.BlueprintEditor;
 import org.moshang.fantasystructure.helper.blueprint.BlueprintManager;
 import org.moshang.fantasystructure.helper.builder.StructureBuilderManager;
+import org.moshang.fantasystructure.networking.FSMessages;
 import org.moshang.fantasystructure.registry.FSBlockEntities;
 import org.moshang.fantasystructure.registry.FSBlocks;
 import org.moshang.fantasystructure.registry.FSItems;
+import org.moshang.fantasystructure.registry.FSMenuType;
+import org.moshang.fantasystructure.screen.ControllerScreen;
 import org.slf4j.Logger;
 
 // The value here should match an entry in the META-INF/mods.toml file
@@ -44,12 +48,14 @@ public class FantasyStructure {
 
     private void commonSetup(final FMLCommonSetupEvent event) {
         event.enqueueWork(() -> {
+            FSMessages.register();
             BlueprintManager.init(FMLPaths.CONFIGDIR.get());
             BlueprintEditor.init();
         });
     }
 
     private void init(IEventBus modEventBus) {
+        FSMenuType.MENU_TYPES.register(modEventBus);
         FSBlocks.BLOCKS.register(modEventBus);
         FSBlockEntities.BLOCK_ENTITIES.register(modEventBus);
         FSItems.ITEMS.register(modEventBus);
@@ -68,6 +74,9 @@ public class FantasyStructure {
 
         @SubscribeEvent
         public static void onClientSetup(FMLClientSetupEvent event) {
+            event.enqueueWork(() -> {
+                MenuScreens.register(FSMenuType.CONTROLLER_MENU_TYPE.get(), ControllerScreen::new);
+            });
         }
     }
 }

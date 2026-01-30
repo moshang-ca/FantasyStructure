@@ -10,7 +10,7 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
 import org.moshang.fantasystructure.FantasyStructure;
-import org.moshang.fantasystructure.block.BlockControllerBase;
+import org.moshang.fantasystructure.api.block.BlockControllerBase;
 import org.moshang.fantasystructure.blockentity.controller.BETestController;
 import org.moshang.fantasystructure.registry.FSBlockEntities;
 

@@ -21,7 +21,7 @@ import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.registries.ForgeRegistries;
 import org.jetbrains.annotations.Nullable;
 import org.moshang.fantasystructure.FantasyStructure;
-import org.moshang.fantasystructure.blockentity.BlockEntityControllerBase;
+import org.moshang.fantasystructure.api.blockentity.BlockEntityControllerBase;
 
 import java.util.ArrayList;
 import java.util.List;

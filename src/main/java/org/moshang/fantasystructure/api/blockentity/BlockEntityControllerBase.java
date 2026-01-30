@@ -1,4 +1,4 @@
-package org.moshang.fantasystructure.blockentity;
+package org.moshang.fantasystructure.api.blockentity;
 
 import com.mojang.logging.LogUtils;
 import net.minecraft.core.BlockPos;
@@ -20,6 +20,9 @@ public abstract class BlockEntityControllerBase extends BlockEntity {
     private ResourceLocation id;
     private int ticks = 0;
 
+    private boolean clientIsFormed = false;
+    private ResourceLocation clientId = null;
+
     private static final Logger LOGGER = LogUtils.getLogger();
 
     public BlockEntityControllerBase(BlockEntityType<?> entityType,
@@ -27,6 +30,12 @@ public abstract class BlockEntityControllerBase extends BlockEntity {
                                      ResourceLocation patternId) {
         super(entityType, pos, state);
         this.id = patternId;
+    }
+
+    public void updateClientData(boolean formed, ResourceLocation id) {
+        this.formed = formed;
+        this.clientId = id;
+        this.setChanged();
     }
 
     @Override
@@ -44,9 +53,6 @@ public abstract class BlockEntityControllerBase extends BlockEntity {
         ticks++;
         if(ticks % 40 == 0) {
             checkStructure();
-            if(formed) {
-                System.out.println("结构完整");
-            }
         }
     }
 
@@ -69,12 +75,11 @@ public abstract class BlockEntityControllerBase extends BlockEntity {
         StructureBuilderManager.startBuild(level, worldPosition, this.pattern, builderStack, isCreative);
     }
 
-    public boolean getFormed() {
-        return formed;
-    }
-    public StructurePattern getPattern() {
-        return pattern;
-    }
+    public boolean getFormed() { return formed; }
+    public StructurePattern getPattern() { return pattern; }
+    public ResourceLocation getId() { return id; }
+    public boolean getClientIsFormed() { return clientIsFormed; }
+    public ResourceLocation getClientId() { return clientId != null ? clientId : id; }
 
     @Override
     public void load(CompoundTag tag) {
@@ -91,10 +96,6 @@ public abstract class BlockEntityControllerBase extends BlockEntity {
         if(tag.contains("formed", CompoundTag.TAG_BYTE)) {
             this.formed = tag.getBoolean("formed");
         }
-
-        if(tag.contains("ticks", CompoundTag.TAG_INT)) {
-            this.ticks = tag.getInt("ticks");
-        }
     }
 
     @Override
@@ -106,6 +107,5 @@ public abstract class BlockEntityControllerBase extends BlockEntity {
         }
 
         tag.putBoolean("formed", formed);
-        tag.putInt("ticks", ticks);
     }
 }

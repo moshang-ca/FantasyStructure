@@ -9,7 +9,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraftforge.fml.ModList;
 import net.minecraftforge.registries.ForgeRegistries;
-import org.moshang.fantasystructure.block.BlockControllerBase;
+import org.moshang.fantasystructure.api.block.BlockControllerBase;
 import org.moshang.fantasystructure.data.BlockInfo;
 import org.moshang.fantasystructure.data.blueprint.StateCache;
 import org.moshang.fantasystructure.helper.StructurePattern;

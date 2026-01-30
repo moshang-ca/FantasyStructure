@@ -53,7 +53,6 @@ public record StructurePattern(Map<BlockPos, BlockInfo> blockPattern, BlockPos c
 
     @Override
     public Map<BlockPos, BlockInfo> blockPattern() {
-        LOGGER.debug("blockPattern is {}", blockPattern);
         return blockPattern;
     }
 
