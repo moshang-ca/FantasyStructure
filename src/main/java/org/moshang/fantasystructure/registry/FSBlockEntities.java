@@ -7,6 +7,7 @@ import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import org.moshang.fantasystructure.FantasyStructure;
+import org.moshang.fantasystructure.blockentity.container.BEItemInputBus;
 import org.moshang.fantasystructure.blockentity.controller.BETestController;
 
 import java.util.Arrays;
@@ -17,6 +18,7 @@ public class FSBlockEntities {
     );
 
     public static final RegistryObject<BlockEntityType<BETestController>> TEST_CONTROLLER_BE = register("test_controller", BETestController::new, FSBlocks.TEST_CONTROLLER);
+    public static final RegistryObject<BlockEntityType<BEItemInputBus>> ITEM_INPUT_BUS_BE = register("tiny_item_input_bus", BEItemInputBus::new, FSBlocks.ITEM_INPUT_BUSES);
 
     private FSBlockEntities() {}
 

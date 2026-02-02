@@ -54,6 +54,7 @@ public abstract class BlockEntityControllerBase extends BlockEntity {
         if(ticks % 40 == 0) {
             checkStructure();
         }
+
     }
 
     protected void initPattern() {
@@ -71,8 +72,9 @@ public abstract class BlockEntityControllerBase extends BlockEntity {
 
     public void autoBuild(ItemStack builderStack, boolean isCreative) {
         if(pattern == null) initPattern();
-        LOGGER.info("autoBuild");
-        StructureBuilderManager.startBuild(level, worldPosition, this.pattern, builderStack, isCreative);
+        if(level != null && !level.isClientSide) {
+            StructureBuilderManager.startBuild(level, worldPosition, this.pattern, builderStack, isCreative);
+        };
     }
 
     public boolean getFormed() { return formed; }
@@ -85,8 +87,8 @@ public abstract class BlockEntityControllerBase extends BlockEntity {
     public void load(CompoundTag tag) {
         super.load(tag);
 
-        if(tag.contains("id", CompoundTag.TAG_STRING)) {
-            String idStr = tag.getString("id");
+        if(tag.contains("patternId", CompoundTag.TAG_STRING)) {
+            String idStr = tag.getString("patternId");
             this.id = ResourceLocation.tryParse(idStr);
             this.pattern = null;
         } else {
@@ -103,7 +105,7 @@ public abstract class BlockEntityControllerBase extends BlockEntity {
         super.saveAdditional(tag);
 
         if(id != null) {
-            tag.putString("id", id.toString());
+            tag.putString("patternId", id.toString());
         }
 
         tag.putBoolean("formed", formed);

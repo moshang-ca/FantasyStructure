@@ -1,4 +1,4 @@
-package org.moshang.fantasystructure.datagen.loot;
+package org.moshang.fantasystructure.datagen.loots;
 
 import net.minecraft.data.PackOutput;
 import net.minecraft.data.loot.LootTableProvider;

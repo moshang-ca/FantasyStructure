@@ -24,6 +24,7 @@ import org.moshang.fantasystructure.registry.FSBlockEntities;
 import org.moshang.fantasystructure.registry.FSBlocks;
 import org.moshang.fantasystructure.registry.FSItems;
 import org.moshang.fantasystructure.registry.FSMenuType;
+import org.moshang.fantasystructure.screen.BusScreen;
 import org.moshang.fantasystructure.screen.ControllerScreen;
 import org.slf4j.Logger;
 
@@ -76,6 +77,7 @@ public class FantasyStructure {
         public static void onClientSetup(FMLClientSetupEvent event) {
             event.enqueueWork(() -> {
                 MenuScreens.register(FSMenuType.CONTROLLER_MENU_TYPE.get(), ControllerScreen::new);
+                MenuScreens.register(FSMenuType.BUS_MENU_TYPE.get(), BusScreen::new);
             });
         }
     }

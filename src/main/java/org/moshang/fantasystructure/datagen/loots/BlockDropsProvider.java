@@ -1,4 +1,4 @@
-package org.moshang.fantasystructure.datagen.loot;
+package org.moshang.fantasystructure.datagen.loots;
 
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.data.loot.BlockLootSubProvider;

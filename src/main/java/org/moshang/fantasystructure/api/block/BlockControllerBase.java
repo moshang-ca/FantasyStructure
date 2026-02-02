@@ -27,7 +27,7 @@ import org.moshang.fantasystructure.networking.packet.ControllerPacket;
 import javax.annotation.Nullable;
 import java.util.function.Supplier;
 
-public abstract class BlockControllerBase<T extends BlockEntityControllerBase> extends Block implements EntityBlock {
+public abstract class BlockControllerBase <T extends BlockEntityControllerBase> extends Block implements EntityBlock {
     private static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
 
     private final Supplier<BlockEntityType<T>> blockEntityTypeSupplier;

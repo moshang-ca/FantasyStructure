@@ -7,6 +7,8 @@ import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import org.moshang.fantasystructure.FantasyStructure;
+import org.moshang.fantasystructure.api.capacity.ComponentItemCapacity;
+import org.moshang.fantasystructure.block.container.BlockItemInputBus;
 import org.moshang.fantasystructure.block.controller.BlockTestController;
 
 import java.util.ArrayList;
@@ -22,6 +24,17 @@ public class FSBlocks {
     );
 
     public static final RegistryObject<Block> TEST_CONTROLLER = register("test_controller", () -> new BlockTestController(3));
+    @SuppressWarnings("unchecked")
+    public static final RegistryObject<Block>[] ITEM_INPUT_BUSES = List.of(
+            register("tiny_item_input_bus", () -> new BlockItemInputBus(3, ComponentItemCapacity.TINY)),
+            register("small_item_input_bus", () -> new BlockItemInputBus(3, ComponentItemCapacity.SMALL)),
+            register("medium_item_input_bus", () -> new BlockItemInputBus(3, ComponentItemCapacity.MEDIUM)),
+            register("large_item_input_bus", () -> new BlockItemInputBus(3, ComponentItemCapacity.LARGE)),
+            register("great_item_input_bus", () -> new BlockItemInputBus(3, ComponentItemCapacity.GREAT)),
+            register("giant_item_input_bus", () -> new BlockItemInputBus(3, ComponentItemCapacity.GIANT)),
+            register("colossal_item_input_bus", () -> new BlockItemInputBus(3, ComponentItemCapacity.COLOSSAL)),
+            register("titanic_item_input_bus", () -> new BlockItemInputBus(3, ComponentItemCapacity.TITANIC))
+    ).toArray(RegistryObject[]::new);
 
     private FSBlocks() {}
 
@@ -33,15 +46,13 @@ public class FSBlocks {
         RegistryObject<T> toReturn = BLOCKS.register(name, block);
 
         FSItems.ITEMS.register(
-                name, () -> new BlockItem(
-                        toReturn.get(), new Item.Properties().stacksTo(stackTo)
-                )
+                name,
+                () -> new BlockItem(toReturn.get(), new Item.Properties().stacksTo(stackTo))
         );
 
         AllBlocks.add(toReturn);
         return toReturn;
     }
-
     public static List<RegistryObject<?>> getBlocks() {
         return Collections.unmodifiableList(AllBlocks);
     }
