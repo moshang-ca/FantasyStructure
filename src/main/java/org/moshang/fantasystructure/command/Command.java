@@ -1,6 +1,7 @@
 package org.moshang.fantasystructure.command;
 
 import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
@@ -11,6 +12,8 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import org.moshang.fantasystructure.api.blockentity.BlockEntityEnergyBusBase;
 import org.moshang.fantasystructure.helper.blueprint.BlueprintEditor;
 
 import java.nio.file.Files;
@@ -27,6 +30,20 @@ public class Command {
                                     .then(Commands.argument("pos2", BlockPosArgument.blockPos())
                                         .then(Commands.argument("filename", StringArgumentType.string())
                                                 .executes(Command::executeExport)))))
+        );
+        dispatcher.register(
+                Commands.literal("fantasystructure")
+                        .then(Commands.argument("pos1", BlockPosArgument.blockPos())
+                                .then(Commands.literal("add")
+                                        .then(Commands.argument("amounts", IntegerArgumentType.integer())
+                                                .executes(commandContext -> {
+                                                    BlockEntity be = commandContext.getSource().getLevel().getBlockEntity(BlockPosArgument.getLoadedBlockPos(commandContext, "pos1"));
+                                                    if(be instanceof BlockEntityEnergyBusBase energyBusBase) {
+                                                        energyBusBase.setEnergyStorageDebug(IntegerArgumentType.getInteger(commandContext, "amounts"));
+                                                        return SINGLE_SUCCESS;
+                                                    }
+                                                    return 0;
+                                                }))))
         );
     }
 

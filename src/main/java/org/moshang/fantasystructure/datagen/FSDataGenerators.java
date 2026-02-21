@@ -6,6 +6,7 @@ import net.minecraftforge.fml.common.Mod;
 import org.moshang.fantasystructure.FantasyStructure;
 import org.moshang.fantasystructure.datagen.loots.FSLootTableProvider;
 import org.moshang.fantasystructure.datagen.models.FSBlockStateProvider;
+import org.moshang.fantasystructure.datagen.recipes.FSRecipeProvider;
 import org.moshang.fantasystructure.datagen.tags.FSBlockTagProvider;
 
 @Mod.EventBusSubscriber(modid = FantasyStructure.MODID, bus = Mod.EventBusSubscriber.Bus.MOD)
@@ -20,5 +21,6 @@ public class FSDataGenerators {
         pack.addProvider(packOutput -> new FSBlockTagProvider(packOutput, lookupProvider, existingFileHelper));
         pack.addProvider(FSLootTableProvider::new);
         pack.addProvider(packOutput -> new FSBlockStateProvider(packOutput, existingFileHelper));
+        pack.addProvider(FSRecipeProvider::new);
     }
 }

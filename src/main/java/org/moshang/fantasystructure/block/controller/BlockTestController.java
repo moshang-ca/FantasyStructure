@@ -38,7 +38,7 @@ public class BlockTestController extends BlockControllerBase<BETestController> i
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> entityType) {
         return level.isClientSide ? null : (lvl, pos, st, be) -> {
             if(be instanceof BETestController controller) {
-                controller.tick();
+                controller.serverTick();
             }
         };
     }

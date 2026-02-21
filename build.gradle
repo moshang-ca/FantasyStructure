@@ -13,6 +13,7 @@ plugins {
     id 'eclipse'
     id 'idea'
     id 'net.minecraftforge.gradle' version '[6.0.16,6.2)'
+    id("io.freefair.lombok") version "9.2.0"
     id 'org.parchmentmc.librarian.forgegradle' version '1.+'
 }
 
@@ -43,7 +44,7 @@ minecraft {
     //
     // Use non-default mappings at your own risk. They may not always work.
     // Simply re-run your setup task after changing the mappings to update your workspace.
-    mappings channel: 'parchment', version: '2023.09.03-1.20.1'
+    mappings channel: "official", version: "1.20.1"
 
     // When true, this property will have all Eclipse/IntelliJ IDEA run configurations run the "prepareX" task for the given run configuration before launching the game.
     // In most cases, it is not necessary to enable.
@@ -140,6 +141,11 @@ repositories {
     // flatDir {
     //     dir 'libs'
     // }
+
+    maven {
+        name "firstdarkdev"
+        url "https://maven.firstdark.dev/snapshots"
+    }
 }
 
 dependencies {
@@ -167,6 +173,7 @@ dependencies {
 
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
 
+    implementation fg.deobf("com.lowdragmc.ldlib:ldlib-forge-1.20.1:1.0.48")
 }
 
 // This block of code expands all declared replace properties in the specified resource targets.

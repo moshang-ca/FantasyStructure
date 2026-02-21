@@ -188,6 +188,7 @@ public class BlueprintEditor {
                         voxels[y][z][x] = 0;
                         continue;
                     }
+
                     String blockStateStr = blockState.toString();
                     Byte index = blockIdToIndex.get(blockStateStr);
                     if(index == null) {

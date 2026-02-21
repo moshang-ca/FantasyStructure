@@ -6,10 +6,13 @@ import net.minecraft.core.Direction;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.state.BlockState;
+import org.moshang.fantasystructure.api.blockentity.IBus;
 import org.moshang.fantasystructure.data.BlockInfo;
 import org.slf4j.Logger;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public record StructurePattern(Map<BlockPos, BlockInfo> blockPattern, BlockPos controllerPos) {
@@ -27,6 +30,7 @@ public record StructurePattern(Map<BlockPos, BlockInfo> blockPattern, BlockPos c
         }
 
         Map<BlockPos, BlockInfo> rotatedMap = new HashMap<>();
+        List<BlockPos> positions = new ArrayList<>();
 
         for(Map.Entry<BlockPos, BlockInfo> entry : pattern.entrySet()) {
             rotatedMap.put(
@@ -44,10 +48,27 @@ public record StructurePattern(Map<BlockPos, BlockInfo> blockPattern, BlockPos c
             BlockInfo info = entry.getValue();
             if (!info.matches(level, worldPos)) {
                 LOGGER.warn("此处有问题：{}， 原因：expected: {}, now: {}", worldPos, info.getExpectedState(), level.getBlockState(worldPos));
-
                 return false;
             }
         }
+        return true;
+    }
+
+    public boolean matches(Level level, BlockPos pos, List<IBus> buses) {
+        var curBuses = new ArrayList<IBus>();
+        for (Map.Entry<BlockPos, BlockInfo> entry : blockPattern.entrySet()) {
+            BlockPos worldPos = pos.offset(entry.getKey());
+            BlockInfo info = entry.getValue();
+            if (!info.matches(level, worldPos)) {
+                LOGGER.warn("此处有问题：{}， 原因：expected: {}, now: {}", worldPos, info.getExpectedState(), level.getBlockState(worldPos));
+                return false;
+            } else {
+                if(level.getBlockEntity(worldPos) instanceof IBus bus) {
+                    curBuses.add(bus);
+                }
+            }
+        }
+        buses.addAll(curBuses);
         return true;
     }
 

@@ -4,6 +4,8 @@ import com.mojang.logging.LogUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.tags.TagKey;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
@@ -12,6 +14,7 @@ import net.minecraftforge.registries.ForgeRegistries;
 import org.moshang.fantasystructure.api.block.BlockControllerBase;
 import org.moshang.fantasystructure.data.BlockInfo;
 import org.moshang.fantasystructure.data.blueprint.StateCache;
+import org.moshang.fantasystructure.data.blueprint.TagCache;
 import org.moshang.fantasystructure.helper.StructurePattern;
 import org.slf4j.Logger;
 
@@ -21,7 +24,10 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.channels.FileChannel;
 import java.nio.file.Path;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class Blueprint {
     private final ResourceLocation id;
@@ -33,6 +39,7 @@ public class Blueprint {
 
     private volatile Map<BlockPos, BlockInfo> patternCache;
     private volatile Map<ResourceLocation, Integer> materialMap;
+    private volatile Map<Integer, TagKey<Block>> tagTableMap;
     private volatile BlockState[] blockTypeTable;
     private Path binaryPath;
 
@@ -101,10 +108,12 @@ public class Blueprint {
             }
 
             channel.position(128);
-            BlockState[] typeTable = loadStateTable(channel, typeCount);
 
+            BlockState[] stateTable = new BlockState[typeCount];
+            Map<Integer, TagKey<Block>> tagTableMap = new HashMap<>();
+            loadTypeTable(channel, typeCount, stateTable, tagTableMap);
             Direction dir = Direction.NORTH;
-            for(BlockState blockState : typeTable) {
+            for(BlockState blockState : stateTable) {
                 if(blockState.getBlock() instanceof BlockControllerBase) {
                     dir = blockState.getValue(BlockStateProperties.HORIZONTAL_FACING);
                     break;
@@ -114,7 +123,7 @@ public class Blueprint {
                                 id, file.getFileName().toString().replace(".fspb", ""),
                                 sizeX, sizeY, sizeZ, controllerOffset, dependencies, dir
                         );
-            bp.blockTypeTable = typeTable;
+            bp.blockTypeTable = stateTable;
             bp.binaryPath = file;
 
             return bp;
@@ -124,7 +133,9 @@ public class Blueprint {
         }
     }
 
-    private static BlockState[] loadStateTable(FileChannel channel, int typeCount) throws IOException, BlueprintLoadException {
+    private static void loadTypeTable(FileChannel channel, int typeCount, BlockState[] stateTable,
+                                              Map<Integer, TagKey<Block>> tagTableMap)
+            throws IOException, BlueprintLoadException {
         if(typeCount <= 0 || typeCount > 255)
             throw new BlueprintLoadException("Invalid blueprint typeCount: " + typeCount);
 
@@ -133,7 +144,6 @@ public class Blueprint {
         channel.read(typeBuffer);
         typeBuffer.flip();
 
-        BlockState[] stateTable = new BlockState[typeCount];
         List<String> missingBlocks = new ArrayList<>();
 
         for(int i = 0; i < typeCount; i++) {
@@ -148,12 +158,16 @@ public class Blueprint {
             typeBuffer.get(stateBytes);
             byte props = typeBuffer.get();
 
-            String blockStateString = new String(stateBytes);
-            BlockState blockState = StateCache.parse(blockStateString);
+            String[] blockTypeStrings = new String(stateBytes).split("\\|", 2);
+            BlockState blockState = StateCache.parse(blockTypeStrings[0]);
+            if((props & 1) == 1) {
+                TagKey<Block> tagKey = TagCache.parse(blockTypeStrings[1]);
+                tagTableMap.put(i, tagKey);
+            }
 
-            if(!blockStateString.equals("Block{minecraft:air}")
+            if(!blockTypeStrings[0].equals("Block{minecraft:air}")
                     && blockState == Blocks.AIR.defaultBlockState()){
-                missingBlocks.add(blockStateString);
+                missingBlocks.add(blockTypeStrings[0]);
                 continue;
             }
 
@@ -166,7 +180,6 @@ public class Blueprint {
                     (missingBlocks.size() > 5 ? "..." : ""));
         }
 
-        return stateTable;
     }
 
     public Map<BlockPos, BlockInfo> getPattern() {

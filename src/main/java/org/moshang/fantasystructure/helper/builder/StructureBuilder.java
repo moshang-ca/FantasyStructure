@@ -3,8 +3,11 @@ package org.moshang.fantasystructure.helper.builder;
 import com.mojang.logging.LogUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.tags.TagKey;
+import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.registries.ForgeRegistries;
 import org.moshang.fantasystructure.Config;
@@ -13,10 +16,7 @@ import org.moshang.fantasystructure.helper.StructurePattern;
 import org.moshang.fantasystructure.item.ItemAutoBuilder;
 import org.slf4j.Logger;
 
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.Map;
-import java.util.Queue;
+import java.util.*;
 
 public class StructureBuilder {
     private final Level level;
@@ -61,8 +61,10 @@ public class StructureBuilder {
 
         while(!taskQueue.isEmpty() && placed < BLOCKS_PER_TICK) {
             Map.Entry<BlockPos, BlockInfo> entry = taskQueue.poll();
+            BlockInfo blockInfo = entry.getValue();
             BlockPos worldPos = center.offset(entry.getKey());
-            BlockState targetState = entry.getValue().getExpectedState();
+            BlockState targetState = blockInfo.getExpectedState();
+            Set<TagKey<Block>> blockTagKeys = blockInfo.getAllowedTags();
 
             if(targetState.isAir()) {
                 continue;
@@ -79,10 +81,10 @@ public class StructureBuilder {
 
             if(!isCreative) {
                 ResourceLocation blockId = ForgeRegistries.BLOCKS.getKey(targetState.getBlock());
-                ItemStack materialStack = ItemAutoBuilder.shrinkMaterials(level, builderStack, blockId);
-                if(materialStack != null) {
-                    if (!level.setBlock(worldPos, targetState, 2)) {
-                        materialStack.shrink(1);
+                ItemStack materialStack = ItemAutoBuilder.shrinkMaterials(level, builderStack, blockTagKeys, blockId);
+                if(materialStack != null && materialStack.getItem() instanceof BlockItem blockItem) {
+                    BlockState materialState = blockInfo.createTagBlockState(blockItem.getBlock());
+                    if (!level.setBlock(worldPos, materialState, 2)) {
                         failedBlock.put(entry.getKey(), entry.getValue());
                     }
                 }

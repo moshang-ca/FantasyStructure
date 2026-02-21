@@ -8,44 +8,49 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraftforge.registries.ForgeRegistries;
 import org.jetbrains.annotations.Nullable;
 import org.moshang.fantasystructure.api.blockentity.BlockEntityControllerBase;
-import org.moshang.fantasystructure.networking.data.ControllerContainerData;
+import org.moshang.fantasystructure.network.data.ControllerContainerData;
 import org.moshang.fantasystructure.registry.FSMenuType;
 
-public class ControllerMenu extends BaseMenu{
+public class ControllerMenu extends BaseMenu {
+    @Deprecated(since = "1.0.0")
     private final ControllerContainerData data;
-    private final Block targetBlock;
+    // New trait from ldlib.
+    // private final BlockEntityControllerBase controller;
 
     public ControllerMenu(int pContainerId, Inventory playerInv, FriendlyByteBuf buf) {
         this(FSMenuType.CONTROLLER_MENU_TYPE.get(),
                 pContainerId,
+                playerInv,
                 buf.readBlockPos(),
-                new ControllerContainerData(buf.readBoolean(), buf.readResourceLocation()),
-                buf.readResourceLocation());
+                new ControllerContainerData(buf.readBoolean(), buf.readResourceLocation()));
+    }
+
+    private ControllerMenu(@Nullable MenuType<?> pMenuType, int pContainerId, Inventory playerInv,
+                           BlockPos pos, boolean isFormed, ResourceLocation id) {
+        this(pMenuType, pContainerId, playerInv, pos, new ControllerContainerData(isFormed, id));
+    }
+
+    private ControllerMenu(@Nullable MenuType<?> pMenuType, int pContainerId, Inventory playerInv, BlockPos pos,
+                          ControllerContainerData data) {
+        super(pMenuType, pContainerId, pos);
+        this.data = data;
 
         addPlayerInventory(playerInv, 8, 155);
         addDataSlots(data);
     }
 
-    public ControllerMenu(@Nullable MenuType<?> pMenuType, int pContainerId, BlockPos pos,
-                          ControllerContainerData data, ResourceLocation blockId) {
-        super(pMenuType, pContainerId, pos, null);
-        this.data = data;
-        this.targetBlock = ForgeRegistries.BLOCKS.getValue(blockId);
+    // New trait from ldlib.
+    //    private ControllerMenu(@Nullable MenuType<?> pMenuType, int pContainerId, Inventory playerInv,
+    //                           BlockEntityControllerBase controller) {
+    //        super(pMenuType, pContainerId, controller.getBlockPos());
+    //        this.data = null;
+    //        this.controller = controller;
+    //        addPlayerInventory(playerInv, 8, 155);
+    //    }
 
-        addDataSlots(data);
-    }
-
-    public ControllerMenu(@Nullable MenuType<?> pMenuType, int pContainerId, BlockPos pos,
-                          Block targetBlock, boolean isFormed, ResourceLocation id) {
-        super(pMenuType, pContainerId, pos, null);
-        this.data = new ControllerContainerData(isFormed, id);
-        this.targetBlock = targetBlock;
-    }
 
     @Override
     public ItemStack quickMoveStack(Player player, int i) {
@@ -73,25 +78,23 @@ public class ControllerMenu extends BaseMenu{
         return itemStack;
     }
 
-    public static ControllerMenu createForServer(int pContainerId, Inventory playerInv, BlockEntity blockEntity, Block targetBlock) {
-        if(blockEntity instanceof BlockEntityControllerBase controller) {
-            ControllerMenu menu = new ControllerMenu(
+    public static ControllerMenu createForServer(int pContainerId, Inventory playerInv, BlockEntity blockEntity) {
+        if(blockEntity instanceof BlockEntityControllerBase controller)
+            return new ControllerMenu(
                     FSMenuType.CONTROLLER_MENU_TYPE.get(),
-                    pContainerId,
+                    pContainerId, playerInv,
                     controller.getBlockPos(),
-                    targetBlock,
-                    controller.getFormed(),
+                    controller.isFormed(),
                     controller.getId()
             );
-            menu.addPlayerInventory(playerInv, 8, 155);
-            return menu;
-        }
         return null;
     }
 
+/*
     public void updateData(boolean formed) {
         data.updateData(formed);
     }
+*/
 
     public boolean isFormed() { return this.data.isFormed(); }
     public ResourceLocation getId() { return this.data.getId(); }

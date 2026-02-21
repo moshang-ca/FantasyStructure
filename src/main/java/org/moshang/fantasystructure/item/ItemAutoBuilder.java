@@ -5,6 +5,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.tags.TagKey;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.InteractionResultHolder;
@@ -14,6 +15,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
@@ -25,6 +27,7 @@ import org.moshang.fantasystructure.api.blockentity.BlockEntityControllerBase;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 public class ItemAutoBuilder extends Item {
     private static final String BUILDER_DATA = FantasyStructure.MODID + "_builder_data";
@@ -35,33 +38,32 @@ public class ItemAutoBuilder extends Item {
 
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
+        if(level.isClientSide) return InteractionResultHolder.pass(player.getItemInHand(hand));
+
         ItemStack stack = player.getItemInHand(hand);
 
         if(player.isShiftKeyDown()) {
             clearContainerPositions(stack);
-            if(level.isClientSide) {
-                player.displayClientMessage(
-                        Component.translatable("cleared"),
-                        false
-                );
-            }
+            player.displayClientMessage(Component.translatable("cleared"), true);
             return InteractionResultHolder.success(stack);
         }
         return InteractionResultHolder.pass(stack);
     }
 
     @Override
-    public InteractionResult useOn(UseOnContext context) {
+    public InteractionResult onItemUseFirst(ItemStack stack, UseOnContext context) {
         Level level = context.getLevel();
-        ItemStack stack = context.getItemInHand();
+        Player player = context.getPlayer();
+        if(level.isClientSide) return InteractionResult.PASS;
+
+        if(player != null && player.isShiftKeyDown()) return InteractionResult.PASS;
+
         BlockPos useOnPos = context.getClickedPos();
         BlockEntity blockEntity = level.getBlockEntity(useOnPos);
 
-        if(!level.isClientSide) {
-            if (blockEntity instanceof BlockEntityControllerBase controller) {
-                controller.autoBuild(stack, context.getPlayer().isCreative());
-                return InteractionResult.SUCCESS;
-            }
+        if (blockEntity instanceof BlockEntityControllerBase controller) {
+            controller.autoBuild(stack, context.getPlayer().isCreative());
+            return InteractionResult.SUCCESS;
         }
 
         if(isContainer(context.getLevel(), useOnPos)) {
@@ -77,12 +79,8 @@ public class ItemAutoBuilder extends Item {
                 return InteractionResult.SUCCESS;
             } else {
                 if (context.getPlayer() != null) {
-                    if(level.isClientSide) {
-                        context.getPlayer().displayClientMessage(
-                                Component.translatable("already_saved"),
-                                false
-                        );
-                    }
+                    context.getPlayer()
+                            .displayClientMessage(Component.translatable("already_saved"), true);
                 }
                 return InteractionResult.CONSUME;
             }
@@ -116,20 +114,70 @@ public class ItemAutoBuilder extends Item {
                         () -> new IllegalStateException("Item handler capacity is present but empty!")
                 );
 
-                for(int slot = 0; slot < itemHandler.getSlots(); slot++) {
-                    ItemStack stackInSlot = itemHandler.getStackInSlot(slot);
+                for(int i = 0; i < itemHandler.getSlots(); i++) {
+                    ItemStack stackInSlot = itemHandler.getStackInSlot(i);
                     if(!stackInSlot.isEmpty()) {
                         Item item = stackInSlot.getItem();
                         if(item instanceof BlockItem blockItem) {
-                            ResourceLocation slotBlockId = ForgeRegistries.BLOCKS.getKey(blockItem.getBlock());
-                            if(blockId.equals(slotBlockId)) {
-                                stackInSlot.shrink(1);
-                                return stackInSlot;
+                            if(blockId.equals(ForgeRegistries.BLOCKS.getKey(blockItem.getBlock()))) {
+                                return shrinkMaterials(level, pos, i);
                             }
                         }
                     }
                 }
             }
+        }
+        return null;
+    }
+
+    public static @Nullable ItemStack shrinkMaterials(Level level, ItemStack stack, Set<TagKey<Block>> blockTagKeys, ResourceLocation blockId) {
+        List<BlockPos> containerPositions = loadTag(stack);
+        for(BlockPos pos : containerPositions) {
+            if(!level.isLoaded(pos)) continue;
+
+            BlockEntity be = level.getBlockEntity(pos);
+            if(be == null) continue;
+
+            LazyOptional<IItemHandler> capability = be.getCapability(ForgeCapabilities.ITEM_HANDLER);
+            if(capability.isPresent()) {
+                IItemHandler itemHandler = capability.orElseThrow(
+                        () -> new IllegalStateException("Item handler capacity is present but empty!")
+                );
+
+                for(int i = 0; i < itemHandler.getSlots(); i++) {
+                    ItemStack stackInSlot = itemHandler.getStackInSlot(i);
+                    if(!stackInSlot.isEmpty()) {
+                        Item item = stackInSlot.getItem();
+                        if(item instanceof BlockItem blockItem) {
+                            if(blockId.equals(ForgeRegistries.BLOCKS.getKey(blockItem.getBlock()))) {
+                                return itemHandler.extractItem(i, 1, false);
+                            } else {
+                                for(TagKey<Block> tagKey : blockTagKeys) {
+                                    if(blockItem.getBlock().defaultBlockState().is(tagKey)) {
+                                        return itemHandler.extractItem(i, 1, false);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    private static @Nullable ItemStack shrinkMaterials(Level level, BlockPos pos, int slot) {
+        if(!level.isLoaded(pos)) return null;
+
+        BlockEntity be = level.getBlockEntity(pos);
+
+        LazyOptional<IItemHandler> capability = be.getCapability(ForgeCapabilities.ITEM_HANDLER);
+        if(capability.isPresent()) {
+            IItemHandler itemHandler = capability.orElseThrow(
+                    () -> new IllegalStateException("Item handler capacity is present but empty!")
+            );
+
+            return itemHandler.extractItem(slot, 1, false);
         }
         return null;
     }

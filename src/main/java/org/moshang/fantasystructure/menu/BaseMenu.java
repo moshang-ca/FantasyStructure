@@ -1,27 +1,49 @@
 package org.moshang.fantasystructure.menu;
 
+import com.mojang.logging.LogUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.MenuType;
-import net.minecraft.world.inventory.Slot;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.items.IItemHandler;
 import org.jetbrains.annotations.Nullable;
 import org.moshang.fantasystructure.api.slot.ExtendedSlotItemHandler;
+import org.slf4j.Logger;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public abstract class BaseMenu extends AbstractContainerMenu {
-    private final BlockPos pos;
-    private final Block targetBlock;
+    private static final Map<Class<?>, MenuFactory<?>> factoryFunctions = new HashMap<>();
+    private static final Logger LOGGER = LogUtils.getLogger();
 
-    public BaseMenu(@Nullable MenuType<?> pMenuType, int pContainerId, BlockPos pos, Block targetBlock) {
+    private final BlockPos pos;
+
+    @FunctionalInterface
+    public interface MenuFactory<T extends BaseMenu> {
+        T create(int pContainerId, Inventory pInv, BlockEntity pBlockEntity);
+    }
+
+    public static <T extends BaseMenu> void register(Class<T> type, MenuFactory<T> factory) {
+        factoryFunctions.put(type, factory);
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <T extends BaseMenu> T create(Class<T> type, int pContainerId, Inventory pInv, BlockEntity pBlockEntity) {
+        MenuFactory<T> factory = (MenuFactory<T>) factoryFunctions.get(type);
+        if (factory == null) {
+            return null;
+        }
+        return factory.create(pContainerId, pInv, pBlockEntity);
+    }
+
+    public BaseMenu(@Nullable MenuType<?> pMenuType, int pContainerId, BlockPos pos) {
         super(pMenuType, pContainerId);
         this.pos = pos;
-        this.targetBlock = targetBlock;
     }
 
     public int addSlotLine(IItemHandler handler, int index, int x, int y, int amount, int dx) {
@@ -51,11 +73,9 @@ public abstract class BaseMenu extends AbstractContainerMenu {
         });
     }
 
-    @Override
+    // Will be added back after solve the issue of can not save item with count uppermore than it's max stack size
+    /*@Override
     public boolean moveItemStackTo(ItemStack stack, int startIndex, int endIndex, boolean reverseDirection) {
-        ItemStack toMove = stack.copy();
-        toMove.setCount(Math.min(stack.getMaxStackSize(), stack.getCount()));
-
         boolean moved = false;
 
         if(reverseDirection) {
@@ -64,39 +84,37 @@ public abstract class BaseMenu extends AbstractContainerMenu {
             endIndex = tmp;
         }
 
-        for(int i = startIndex; i < endIndex && !toMove.isEmpty(); i++) {
+        for(int i = startIndex; i < endIndex && !stack.isEmpty(); i++) {
             Slot targetSlot = this.slots.get(i);
             ItemStack targetStack = targetSlot.getItem();
 
-            if(ItemStack.isSameItemSameTags(toMove, targetStack)) {
+            if(ItemStack.isSameItemSameTags(stack, targetStack)) {
                 int space = targetSlot.getMaxStackSize(targetStack) - targetStack.getCount();
                 if(space > 0) {
-                    int transfer =  Math.min(space, toMove.getCount());
+                    int transfer =  Math.min(space, stack.getCount());
                     targetStack.grow(transfer);
-                    toMove.shrink(transfer);
                     stack.shrink(transfer);
                     targetSlot.setChanged();
-                    moved = true;
+                    return true;
                 }
             }
         }
 
-        for(int i = startIndex; i < endIndex && !toMove.isEmpty(); i++) {
+        for(int i = startIndex; i < endIndex && !stack.isEmpty(); i++) {
             Slot targetSlot = this.slots.get(i);
-            if(targetSlot.getItem().isEmpty() && targetSlot.mayPlace(toMove)) {
-                int transfer = Math.min(targetSlot.getMaxStackSize(toMove), toMove.getCount());
-                ItemStack newStack = toMove.copy();
+            if(targetSlot.getItem().isEmpty() && targetSlot.mayPlace(stack)) {
+                int transfer = Math.min(targetSlot.getMaxStackSize(stack), stack.getCount());
+                ItemStack newStack = stack.copy();
                 newStack.setCount(transfer);
                 targetSlot.set(newStack);
-                toMove.shrink(transfer);
                 stack.shrink(transfer);
                 targetSlot.setChanged();
-                moved = true;
+                return true;
             }
         }
 
-        return moved;
-    }
+        return false;
+    }*/
 
     @Override
     public boolean stillValid(Player player) {

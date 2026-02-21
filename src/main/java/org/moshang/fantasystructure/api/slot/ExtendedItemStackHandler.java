@@ -4,6 +4,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.items.ItemStackHandler;
 import org.jetbrains.annotations.NotNull;
 
+@Deprecated
 public class ExtendedItemStackHandler extends ItemStackHandler {
     private final int maxStackSize;
 
@@ -22,6 +23,4 @@ public class ExtendedItemStackHandler extends ItemStackHandler {
         super.getStackLimit(slot, stack);
         return getSlotLimit(slot);
     }
-
-
 }

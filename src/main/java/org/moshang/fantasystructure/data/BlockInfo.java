@@ -1,90 +1,106 @@
 package org.moshang.fantasystructure.data;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.Collections;
 import java.util.Set;
 
 public class BlockInfo {
-    @Nullable
-    private final BlockState expectedState;
+    @NotNull private final BlockState expectedState;
     private final Set<TagKey<Block>> allowedTags;
-    @Nullable
-    private final CompoundTag tag;
+    private final byte propertyFlag;
+
+    private static final byte FLAG_HORIZONTAL_FACING = 0x01;
+    private static final byte FLAG_FACING = 0x02;
+    private static final byte FLAG_AXIS = 0x04;
 
     public BlockInfo(@NotNull BlockState state) {
-        this.expectedState = state;
-        this.allowedTags = Collections.emptySet();
-        this.tag = null;
+        this(state, Collections.emptySet());
     }
 
-    public BlockInfo(@NotNull Set<TagKey<Block>> allowedTags) {
-        this.expectedState = null;
+    public BlockInfo(@NotNull BlockState state, Set<TagKey<Block>> allowedTags) {
+        this.expectedState = state;
         this.allowedTags = allowedTags;
-        this.tag = null;
+        this.propertyFlag = calculateProperty(state, allowedTags);
     }
 
-    public BlockInfo(BlockState state, CompoundTag tag) {
-        this.expectedState = state;
-        this.allowedTags = Collections.emptySet();
-        this.tag = tag;
+    private byte calculateProperty(BlockState state, Set<TagKey<Block>> allowedTags) {
+        if(allowedTags.isEmpty()) return 0;
+
+        byte flag = 0;
+        if(state.hasProperty(BlockStateProperties.FACING)) {
+            flag |= FLAG_FACING;
+        } else if(state.hasProperty(BlockStateProperties.HORIZONTAL_FACING)) {
+            flag |= FLAG_HORIZONTAL_FACING;
+        } else if(state.hasProperty(BlockStateProperties.AXIS)) {
+            flag |= FLAG_AXIS;
+        }
+
+        return flag;
     }
 
     public boolean matches(Level level, BlockPos pos) {
         BlockState state = level.getBlockState(pos);
 
+        if(state.equals(expectedState)) return true;
+
         if(!allowedTags.isEmpty()) {
             for(TagKey<Block> tag : allowedTags) {
                 if(state.is(tag)) {
-                    return checkIfNeed(level, pos);
+                    if(propertyFlag != 0) {
+                        return matchProperties(state);
+                    }
                 }
             }
             return false;
         }
-
-        if(expectedState != null) {
-            if(!state.equals(expectedState)) {
-                return false;
-            }
-            return checkIfNeed(level, pos);
-        }
-
         return false;
     }
 
-    private boolean checkIfNeed(Level level, BlockPos pos) {
-        if(tag == null) {
-            return true;
-        }
-
-        BlockEntity be = level.getBlockEntity(pos);
-        if(be == null) {
-            return false;
-        }
-
-        CompoundTag nbt = be.serializeNBT();
-        return containsAll(nbt, tag);
-    }
-
-    private boolean containsAll(CompoundTag actualNBT, CompoundTag requiredNBT) {
-        for(String key : requiredNBT.getAllKeys()) {
-            if(!actualNBT.contains(key)) {
-                return false;
+    private boolean matchProperties(BlockState actualState) {
+        boolean matched = true;
+        if(propertyFlag != 0) {
+            if((propertyFlag & FLAG_HORIZONTAL_FACING) != 0) {
+                matched = expectedState.getValue(BlockStateProperties.HORIZONTAL_FACING) == actualState.getValue(BlockStateProperties.HORIZONTAL_FACING);
+            } else if((propertyFlag & FLAG_FACING) != 0) {
+                matched = expectedState.getValue(BlockStateProperties.FACING) == actualState.getValue(BlockStateProperties.FACING);
+            } else if((propertyFlag & FLAG_AXIS) != 0) {
+                matched = expectedState.getValue(BlockStateProperties.AXIS) == actualState.getValue(BlockStateProperties.AXIS);
             }
         }
-        return true;
+        return matched;
+    }
+
+    public BlockState createTagBlockState(Block block) {
+        if(propertyFlag != 0) {
+            if((propertyFlag & FLAG_HORIZONTAL_FACING) != 0) {
+                return block.defaultBlockState().setValue(
+                        BlockStateProperties.HORIZONTAL_FACING,
+                        expectedState.getValue(BlockStateProperties.HORIZONTAL_FACING));
+            } else if((propertyFlag & FLAG_FACING) != 0) {
+                return block.defaultBlockState().setValue(
+                        BlockStateProperties.FACING,
+                        expectedState.getValue(BlockStateProperties.FACING));
+            } else if((propertyFlag & FLAG_AXIS) != 0) {
+                return block.defaultBlockState().setValue(
+                        BlockStateProperties.AXIS,
+                        expectedState.getValue(BlockStateProperties.AXIS));
+            }
+        }
+        return block.defaultBlockState();
     }
 
     public BlockState getExpectedState() {
         return expectedState;
+    }
+    public Set<TagKey<Block>> getAllowedTags() {
+        return allowedTags;
     }
 
     public boolean isAir() {

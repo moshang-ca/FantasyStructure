@@ -7,7 +7,9 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import org.moshang.fantasystructure.FantasyStructure;
 import org.moshang.fantasystructure.api.blockentity.BlockEntityControllerBase;
+import org.moshang.fantasystructure.api.recipe.FSRecipeType;
 import org.moshang.fantasystructure.registry.FSBlockEntities;
+import org.moshang.fantasystructure.registry.recipe.FSRecipes;
 import org.slf4j.Logger;
 
 @SuppressWarnings("removal")
@@ -31,5 +33,8 @@ public class BETestController extends BlockEntityControllerBase {
         getPattern().blockPattern().forEach((pos, info) -> System.out.printf("pos %s is %s%n", pos, info.getExpectedState()));
     }
 
-
+    @Override
+    public FSRecipeType getRecipeType() {
+        return FSRecipes.RECIPE_TYPES.get("stellar_simulacrum");
+    }
 }
