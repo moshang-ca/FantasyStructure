@@ -1,9 +1,14 @@
 package org.moshang.fantasystructure.api.blockentity;
 
+import com.lowdragmc.lowdraglib.syncdata.IContentChangeAware;
+import com.lowdragmc.lowdraglib.syncdata.IManagedStorage;
+import com.lowdragmc.lowdraglib.syncdata.annotation.DescSynced;
+import com.lowdragmc.lowdraglib.syncdata.annotation.Persisted;
+import com.lowdragmc.lowdraglib.syncdata.field.FieldManagedStorage;
+import com.lowdragmc.lowdraglib.syncdata.field.ManagedFieldHolder;
 import lombok.Getter;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
@@ -15,14 +20,38 @@ import net.minecraftforge.energy.IEnergyStorage;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.moshang.fantasystructure.api.block.BlockEnergyBusBase;
+import org.moshang.fantasystructure.api.capability.recipe.IO;
 import org.moshang.fantasystructure.api.capability.recipe.IRecipeHandler;
 import org.moshang.fantasystructure.api.capability.recipe.RecipeCapability;
 import org.moshang.fantasystructure.api.capacity.ComponentEnergyCapacity;
-import org.moshang.fantasystructure.api.capability.recipe.IO;
 import org.moshang.fantasystructure.capability.handler.EnergyRecipeHandler;
 import org.moshang.fantasystructure.capability.recipe.EnergyRecipeCapability;
 
 public abstract class BlockEntityEnergyBusBase extends BlockEntity implements IBus {
+    protected static final ManagedFieldHolder MANAGED_FIELD_HOLDER = new ManagedFieldHolder(BlockEntityEnergyBusBase.class);
+    private final FieldManagedStorage syncStorage = new FieldManagedStorage(this);
+
+    @Override
+    public ManagedFieldHolder getFieldHolder() {
+        return MANAGED_FIELD_HOLDER;
+    }
+
+    @Override
+    public IManagedStorage getSyncStorage() {
+        return syncStorage;
+    }
+
+    @Override
+    public void onChanged() {
+        setChanged();
+    }
+
+    @Override
+    public IManagedStorage getRootStorage() {
+        return getSyncStorage();
+    }
+
+    @Getter @Persisted @DescSynced
     private final EnergyStorage energyStorage;
     private final LazyOptional<IEnergyStorage> energyHandler;
 
@@ -48,23 +77,12 @@ public abstract class BlockEntityEnergyBusBase extends BlockEntity implements IB
 
         this.energyStorage = new EnergyStorage(capacity, maxReceive, maxExtract);
         this.energyHandler = LazyOptional.of(() -> energyStorage);
+        ((IContentChangeAware) energyStorage).setOnContentsChanged(this::setChanged);
 
         // For Recipe
         this.io = pBlockState.getValue(BlockEnergyBusBase.IO_TYPE);
         this.recipeHandler = new EnergyRecipeHandler(io, energyStorage);
         this.recipeCapability = EnergyRecipeCapability.INSTANCE;
-    }
-
-    @Override
-    public void load(CompoundTag pTag) {
-        super.load(pTag);
-        if(pTag.contains("EnergyStorage")) energyStorage.deserializeNBT(pTag.get("EnergyStorage"));
-    }
-
-    @Override
-    protected void saveAdditional(CompoundTag pTag) {
-        super.saveAdditional(pTag);
-        pTag.put("EnergyStorage", energyStorage.serializeNBT());
     }
 
     @Override

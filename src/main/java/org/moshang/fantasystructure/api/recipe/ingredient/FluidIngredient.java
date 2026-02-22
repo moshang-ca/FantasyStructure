@@ -5,6 +5,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
+import com.lowdragmc.lowdraglib.side.fluid.FluidHelper;
 import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.core.registries.Registries;
@@ -19,7 +20,6 @@ import net.minecraftforge.common.crafting.CraftingHelper;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.registries.ForgeRegistries;
 import org.jetbrains.annotations.Nullable;
-import org.moshang.fantasystructure.util.FluidHelper;
 
 import java.util.Arrays;
 import java.util.Collection;

@@ -22,7 +22,7 @@ public class FSBlockEntities {
     public static final RegistryObject<BlockEntityType<BETestController>> TEST_CONTROLLER_BE = register("test_controller", BETestController::new, FSBlocks.TEST_CONTROLLER);
 
     public static final RegistryObject<BlockEntityType<BEItemBus>> ITEM_BUS_BE = register("item_bus", BEItemBus::new, merge(FSBlocks.ITEM_INPUT_BUSES, FSBlocks.ITEM_OUTPUT_BUSES));
-    public static final RegistryObject<BlockEntityType<BEEnergyBus>> ENERGY_BUS_BE = register("energy_bus", BEEnergyBus::new, FSBlocks.ENERGY_INPUT_BUSES);
+    public static final RegistryObject<BlockEntityType<BEEnergyBus>> ENERGY_BUS_BE = register("energy_bus", BEEnergyBus::new, merge(FSBlocks.ENERGY_INPUT_BUSES, FSBlocks.ENERGY_OUTPUT_BUSES));
 
     public static final RegistryObject<BlockEntityType<BlockEntityCreativeEnergySource>> CREATIVE_ENERGY_SOURCE_BE = register("creative_energy_source", BlockEntityCreativeEnergySource::new, FSBlocks.CREATIVE_ENERGY_SOURCE);
 

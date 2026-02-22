@@ -34,7 +34,7 @@ import java.util.function.Consumer;
 public class FSRecipeBuilder {
     private final Map<RecipeCapability<?>, List<Content>> inputs = new HashMap<>();
     private final Map<RecipeCapability<?>, List<Content>> outputs = new HashMap<>();
-    private CompoundTag data;
+    private CompoundTag data = new CompoundTag();
 
     @Setter
     private ResourceLocation id;

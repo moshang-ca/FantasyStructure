@@ -1,9 +1,12 @@
 package org.moshang.fantasystructure.api.blockentity;
 
+import com.lowdragmc.lowdraglib.syncdata.IManagedStorage;
+import com.lowdragmc.lowdraglib.syncdata.annotation.Persisted;
+import com.lowdragmc.lowdraglib.syncdata.field.FieldManagedStorage;
+import com.lowdragmc.lowdraglib.syncdata.field.ManagedFieldHolder;
 import lombok.Getter;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -23,9 +26,33 @@ import org.moshang.fantasystructure.api.slot.ExtendedItemStackHandler;
 import org.moshang.fantasystructure.capability.handler.ItemSlotRecipeHandler;
 import org.moshang.fantasystructure.capability.recipe.ItemRecipeCapability;
 
-@SuppressWarnings({"deprecation"})
 public abstract class BlockEntityItemBusBase extends BlockEntity implements IBus {
-    @Getter
+    protected static final ManagedFieldHolder MANAGED_FIELD_HOLDER = new ManagedFieldHolder(BlockEntityItemBusBase.class);
+    private final FieldManagedStorage syncStorage = new FieldManagedStorage(this);
+
+    @Override
+    public void onChanged() {
+        setChanged();
+    }
+
+    @Override
+    public IManagedStorage getSyncStorage() {
+        return syncStorage;
+    }
+
+    @Override
+    public ManagedFieldHolder getFieldHolder() {
+        return MANAGED_FIELD_HOLDER;
+    }
+
+    @Override
+    public IManagedStorage getRootStorage() {
+        return getSyncStorage();
+    }
+
+    private final ComponentItemCapacity type;
+
+    @Getter @Persisted
     private final ExtendedItemStackHandler itemHandler;
     private final LazyOptional<IItemHandler> handler;
     @Getter
@@ -37,7 +64,7 @@ public abstract class BlockEntityItemBusBase extends BlockEntity implements IBus
 
     public BlockEntityItemBusBase(BlockEntityType<?> pType, BlockPos pPos, BlockState pBlockState) {
         super(pType, pPos, pBlockState);
-        ComponentItemCapacity type = pBlockState.getValue(BlockItemBusBase.TYPE);
+        this.type = pBlockState.getValue(BlockItemBusBase.TYPE);
         this.itemHandler = createHandler(type.getSlots(), type.getMaxStackSize());
         this.handler = LazyOptional.of(() -> itemHandler);
 
@@ -56,19 +83,21 @@ public abstract class BlockEntityItemBusBase extends BlockEntity implements IBus
         };
     }
 
-    @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
-        tag.put("ItemHandler", itemHandler.serializeNBT());
-    }
 
-    @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
-        if(tag.contains("ItemHandler")) {
-            itemHandler.deserializeNBT(tag.getCompound("ItemHandler"));
-        }
-    }
+
+//    @Override
+//    protected void saveAdditional(CompoundTag tag) {
+//        super.saveAdditional(tag);
+//        tag.put("ItemHandler", itemHandler.serializeNBT());
+//    }
+//
+//    @Override
+//    public void load(CompoundTag tag) {
+//        super.load(tag);
+//        if(tag.contains("ItemHandler")) {
+//            itemHandler.deserializeNBT(tag.getCompound("ItemHandler"));
+//        }
+//    }
 
     @Override
     public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {

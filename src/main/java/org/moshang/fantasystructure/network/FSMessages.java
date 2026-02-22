@@ -7,7 +7,6 @@ import net.minecraftforge.network.NetworkRegistry;
 import net.minecraftforge.network.PacketDistributor;
 import net.minecraftforge.network.simple.SimpleChannel;
 import org.moshang.fantasystructure.FantasyStructure;
-import org.moshang.fantasystructure.network.packet.ControllerPacket;
 import org.slf4j.Logger;
 
 @SuppressWarnings("removal")
@@ -30,9 +29,7 @@ public class FSMessages {
                 .serverAcceptedVersions(PROTOCOL_VERSION::equals)
                 .simpleChannel();
 
-        INSTANCE.registerMessage(id(), ControllerPacket.class, ControllerPacket::toBytes, ControllerPacket::new, ControllerPacket::handle);
-
-        LOGGER.info("init complete!");
+        LOGGER.info("FSMessage init complete!");
     }
 
     public static <MSG> void sendToServer(MSG message) {

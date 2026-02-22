@@ -38,6 +38,7 @@ public class FSRecipeType implements RecipeType<FSRecipe> {
     public FSRecipeType(ResourceLocation registryName, RecipeType<?>... proxyRecipes) {
         this.registryName = registryName;
         builder = FSRecipeBuilder.of(registryName, this);
+        proxyRecipeTypes.addAll(Arrays.asList(proxyRecipes));
     }
 
     // This function will be injected in recipe manager class.

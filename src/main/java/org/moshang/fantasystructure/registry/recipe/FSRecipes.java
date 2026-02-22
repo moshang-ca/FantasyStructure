@@ -34,7 +34,6 @@ public class FSRecipes {
         RECIPE_TYPES.freeze();
         RECIPE_TYPES.forEach(k -> {
             ForgeRegistries.RECIPE_TYPES.register(k.getRegistryName(), k);
-            var serializer = new FSRecipeSerializer();
             ForgeRegistries.RECIPE_SERIALIZERS.register(k.getRegistryName(), FSRecipeSerializer.SERIALIZER);
         });
 

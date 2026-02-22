@@ -54,6 +54,9 @@ public class FSBlocks {
             register("colossal_energy_input_bus", () -> new BlockEnergyBus(3, ComponentEnergyCapacity.COLOSSAL, IO.IN)),
             register("titanic_energy_input_bus", () -> new BlockEnergyBus(3, ComponentEnergyCapacity.TITANIC, IO.IN))
     ).toArray(RegistryObject[]::new);
+    public static final RegistryObject<Block>[] ENERGY_OUTPUT_BUSES = List.of(
+            register("tiny_energy_output_bus", () -> new BlockEnergyBus(3, ComponentEnergyCapacity.TINY, IO.OUT))
+    ).toArray(RegistryObject[]::new);
 
     public static final RegistryObject<Block> CREATIVE_ENERGY_SOURCE = register("creative_energy_source", () -> new BlockCreativeEnergySource(3));
 

@@ -21,8 +21,6 @@ import net.minecraftforge.network.NetworkHooks;
 import org.moshang.fantasystructure.api.blockentity.BlockEntityControllerBase;
 import org.moshang.fantasystructure.menu.ControllerMenu;
 import org.moshang.fantasystructure.menu.menuprovider.BlockMenuProvider;
-import org.moshang.fantasystructure.network.FSMessages;
-import org.moshang.fantasystructure.network.packet.ControllerPacket;
 
 import javax.annotation.Nullable;
 import java.util.function.Supplier;
@@ -97,9 +95,6 @@ public abstract class BlockControllerBase <T extends BlockEntityControllerBase> 
         if(!level.isClientSide && player instanceof ServerPlayer serverPlayer) {
             BlockEntity be = level.getBlockEntity(pos);
             if(be instanceof BlockEntityControllerBase controller) {
-                ControllerPacket packet = new ControllerPacket(pos, controller.getId(), controller.isFormed());
-                FSMessages.sendToClient(packet, serverPlayer);
-
                 NetworkHooks.openScreen(serverPlayer, new BlockMenuProvider(controller, ControllerMenu.class), buf -> {
                     buf.writeBlockPos(pos);
                     buf.writeBoolean(controller.isFormed());

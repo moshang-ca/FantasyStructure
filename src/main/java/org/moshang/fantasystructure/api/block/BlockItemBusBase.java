@@ -18,8 +18,8 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraftforge.network.NetworkHooks;
 import org.jetbrains.annotations.Nullable;
 import org.moshang.fantasystructure.api.blockentity.BlockEntityItemBusBase;
-import org.moshang.fantasystructure.api.capacity.ComponentItemCapacity;
 import org.moshang.fantasystructure.api.capability.recipe.IO;
+import org.moshang.fantasystructure.api.capacity.ComponentItemCapacity;
 import org.moshang.fantasystructure.menu.ItemBusMenu;
 import org.moshang.fantasystructure.menu.menuprovider.BlockMenuProvider;
 
@@ -78,7 +78,7 @@ public abstract class BlockItemBusBase<T extends BlockEntityItemBusBase> extends
     public InteractionResult use(BlockState pState, Level pLevel, BlockPos pPos, Player pPlayer, InteractionHand pHand, BlockHitResult pHit) {
         if(!pLevel.isClientSide && pPlayer instanceof ServerPlayer serverPlayer) {
             BlockEntity be = pLevel.getBlockEntity(pPos);
-            if(be instanceof BlockEntityItemBusBase) {
+            if(be instanceof BlockEntityItemBusBase bus) {
                 BlockState state = be.getBlockState();
                 NetworkHooks.openScreen(
                         serverPlayer,

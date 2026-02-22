@@ -5,8 +5,8 @@ import net.minecraft.util.StringRepresentable;
 
 @Getter
 public enum IO implements StringRepresentable {
-    IN("import"),
-    OUT("export");
+    IN("input"),
+    OUT("output");
 
 
     private final String name;

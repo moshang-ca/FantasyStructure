@@ -5,6 +5,7 @@
   "compatibilityLevel": "JAVA_8",
   "refmap": "fantasystructure.refmap.json",
   "mixins": [
+    "EnergyStorageMixin",
     "RecipeManagerMixin"
   ],
   "client": [

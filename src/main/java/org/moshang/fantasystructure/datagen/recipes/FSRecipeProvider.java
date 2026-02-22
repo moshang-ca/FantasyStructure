@@ -18,11 +18,10 @@ public class FSRecipeProvider extends RecipeProvider {
 
     @Override
     protected void buildRecipes(Consumer<FinishedRecipe> finishedRecipe) {
-        FSRecipeBuilder.of(FantasyStructure.id("lava_bucket"), FSRecipes.RECIPE_TYPES.get("stellar_simulacrum"))
-                .inputItems(Items.BUCKET)
-                .perTick(true).input(EnergyRecipeCapability.INSTANCE, 100)
-                .duration(20)
-                .perTick(false).outputItems(Items.LAVA_BUCKET)
+        FSRecipeBuilder.of(FantasyStructure.id("coal_energy"), FSRecipes.RECIPE_TYPES.get("stellar_simulacrum"))
+                .inputItems(Items.COAL)
+                .perTick(true).output(EnergyRecipeCapability.INSTANCE, 100)
+                .duration(200)
                 .save(finishedRecipe);
     }
 }

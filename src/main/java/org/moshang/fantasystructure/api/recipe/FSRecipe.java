@@ -187,6 +187,13 @@ public class FSRecipe implements Recipe<Container> {
         return handleRecipe(false, io, holder, io == IO.IN ? inputs : outputs);
     }
 
+    /**
+     * @param perTick should produce or consume every tick
+     * @param io the handle direction
+     * @param holder the recipe capability holder, usually is a controller entity
+     * @param contents the content of inputs or outputs
+     * @return whether the handler can handle the contents
+    * */
     public boolean handleRecipe(boolean perTick, IO io, IRecipeCapabilityHolder holder, Map<RecipeCapability<?>, List<Content>> contents) {
         Table<IO, RecipeCapability<?>, List<IRecipeHandler<?>>> capabilityProxies = holder.getRecipeCapabilitiesProxy();
         for(var entry : contents.entrySet()) {
@@ -223,6 +230,19 @@ public class FSRecipe implements Recipe<Container> {
         return true;
     }
 
+    /**
+     * This will handle the content, will be called in {@code matchRecipe()} and {@code handleRecipe()}
+     * @param capIO the handler's IO
+     * @param io the demanded IO, usually same as the capIO.
+     * @param capabilityProxies all capability handlers carried by a holder
+     * @param capability capability that handle the content needed
+     * @param used all handler that failed to handle the contents
+     * @param content all need to be handled contents
+     * @param contentSlot all need to be handled contents, which should be put in exactly slot
+     * @param contentSearch the full list of contents, this won't be affected by the chance.
+     * @param contentSlotSearch the full list of contents with exactly slot name, this won't be affected by the chance.
+     * @param simulate should be executed in real environment
+     * */
     private Tuple<List, Map<String, List>> handlerContentsInternal(
             IO capIO, IO io, Table<IO, RecipeCapability<?>, List<IRecipeHandler<?>>> capabilityProxies,
             RecipeCapability<?> capability, Set<IRecipeHandler<?>> used,
