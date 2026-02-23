@@ -6,12 +6,10 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraftforge.items.ItemStackHandler;
 
 public class ExtendedItemStackHandler extends ItemStackHandler implements ITagSerializable<CompoundTag>, IContentChangeAware {
-    private final int maxStackSize;
     private Runnable onContentsChanged = () -> {};
 
-    public ExtendedItemStackHandler(int size, int maxStackSize) {
+    public ExtendedItemStackHandler(int size) {
         super(size);
-        this.maxStackSize = maxStackSize;
     }
 
     @Override

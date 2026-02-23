@@ -1,7 +1,9 @@
 package org.moshang.fantasystructure.api.capacity;
 
+import lombok.Getter;
 import net.minecraft.util.StringRepresentable;
 
+@Getter
 public enum ComponentItemCapacity implements StringRepresentable {
     TINY(4, 64, 71, 48, 2, 2, "textures/gui/tiny_item_input_bus.png"),
     SMALL(9, 64, 62, 39, 3, 3,"textures/gui/small_item_input_bus.png"),
@@ -28,18 +30,6 @@ public enum ComponentItemCapacity implements StringRepresentable {
         this.yAmount = yAmount;
         this.guiTexture = guiTexture;
     }
-
-    public int getSlots() {
-        return slots;
-    }
-    public int getMaxStackSize() {
-        return maxStackSize;
-    }
-    public String getGuiTexture() { return guiTexture; }
-    public int getX() { return x; }
-    public int getY() { return y; }
-    public int getXAmount() { return xAmount; }
-    public int getYAmount() { return yAmount; }
 
     @Override
     public String getSerializedName() {

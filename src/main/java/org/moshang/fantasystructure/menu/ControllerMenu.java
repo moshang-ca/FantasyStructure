@@ -1,56 +1,83 @@
 package org.moshang.fantasystructure.menu;
 
+import lombok.Getter;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.inventory.MenuType;
-import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.inventory.*;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import org.jetbrains.annotations.Nullable;
 import org.moshang.fantasystructure.api.blockentity.BlockEntityControllerBase;
-import org.moshang.fantasystructure.network.data.ControllerContainerData;
 import org.moshang.fantasystructure.registry.FSMenuType;
 
+@SuppressWarnings("removal")
 public class ControllerMenu extends BaseMenu {
-    @Deprecated(since = "1.0.0")
-    private final ControllerContainerData data;
-    // New trait from ldlib.
-    // private final BlockEntityControllerBase controller;
+//    @Deprecated
+//    private  ControllerContainerData data;
+    @Getter
+    private final ResourceLocation structureID;
+    private final Level level;
+    private final BlockPos pos;
+    private final ContainerData data;
 
+//    public ControllerMenu(int pContainerId, Inventory playerInv, FriendlyByteBuf buf) {
+//        this(FSMenuType.CONTROLLER_MENU_TYPE.get(),
+//                pContainerId,
+//                playerInv,
+//                buf.readBlockPos(),
+//                new ControllerContainerData(buf.readBoolean(), buf.readResourceLocation()));
+//    }
+
+//    private ControllerMenu(@Nullable MenuType<?> pMenuType, int pContainerId, Inventory playerInv,
+//                           BlockPos pos, boolean isFormed, ResourceLocation id) {
+//        this(pMenuType, pContainerId, playerInv, pos, new ControllerContainerData(isFormed, id));
+//    }
+//
+//    private ControllerMenu(@Nullable MenuType<?> pMenuType, int pContainerId, Inventory playerInv, BlockPos pos,
+//                          ControllerContainerData data) {
+//        super(pMenuType, pContainerId, pos);
+//        this.data = data;
+//
+//        if(playerInv.player.level().getBlockEntity(pos) instanceof BlockEntityControllerBase be) {
+//            this.formed = be.isFormed();
+//            this.structureID = be.getId();
+//        } else {
+//            this.formed = data.isFormed();
+//            this.structureID = data.getId();
+//        }
+//
+//        addPlayerInventory(playerInv, 8, 155);
+//        addDataSlots(data);
+//    }
+
+    // New trait from ldlib.
+    // For Server
+    private ControllerMenu(@Nullable MenuType<?> pMenuType, int pContainerId, Inventory playerInv, BlockPos pos) {
+        super(pMenuType, pContainerId, pos);
+        this.data = new SimpleContainerData(1);
+        this.level = playerInv.player.level();
+        this.pos = pos;
+
+        if(playerInv.player.level().getBlockEntity(pos) instanceof BlockEntityControllerBase be) {
+            this.data.set(0, be.isFormed() ? 1 : 0);
+            this.structureID = be.getId();
+        } else {
+            this.data.set(0, 0);
+            this.structureID = new ResourceLocation("null_structure");
+        }
+
+        addDataSlots(this.data);
+    }
+
+    // For remote
     public ControllerMenu(int pContainerId, Inventory playerInv, FriendlyByteBuf buf) {
         this(FSMenuType.CONTROLLER_MENU_TYPE.get(),
-                pContainerId,
-                playerInv,
-                buf.readBlockPos(),
-                new ControllerContainerData(buf.readBoolean(), buf.readResourceLocation()));
+                pContainerId, playerInv, buf.readBlockPos());
     }
-
-    private ControllerMenu(@Nullable MenuType<?> pMenuType, int pContainerId, Inventory playerInv,
-                           BlockPos pos, boolean isFormed, ResourceLocation id) {
-        this(pMenuType, pContainerId, playerInv, pos, new ControllerContainerData(isFormed, id));
-    }
-
-    private ControllerMenu(@Nullable MenuType<?> pMenuType, int pContainerId, Inventory playerInv, BlockPos pos,
-                          ControllerContainerData data) {
-        super(pMenuType, pContainerId, pos);
-        this.data = data;
-
-        addPlayerInventory(playerInv, 8, 155);
-        addDataSlots(data);
-    }
-
-    // New trait from ldlib.
-    //    private ControllerMenu(@Nullable MenuType<?> pMenuType, int pContainerId, Inventory playerInv,
-    //                           BlockEntityControllerBase controller) {
-    //        super(pMenuType, pContainerId, controller.getBlockPos());
-    //        this.data = null;
-    //        this.controller = controller;
-    //        addPlayerInventory(playerInv, 8, 155);
-    //    }
-
 
     @Override
     public ItemStack quickMoveStack(Player player, int i) {
@@ -83,19 +110,22 @@ public class ControllerMenu extends BaseMenu {
             return new ControllerMenu(
                     FSMenuType.CONTROLLER_MENU_TYPE.get(),
                     pContainerId, playerInv,
-                    controller.getBlockPos(),
-                    controller.isFormed(),
-                    controller.getId()
+                    controller.getBlockPos()
             );
         return null;
     }
 
-/*
-    public void updateData(boolean formed) {
-        data.updateData(formed);
+    public boolean isFormed() {
+        return this.data.get(0) == 1;
     }
-*/
 
-    public boolean isFormed() { return this.data.isFormed(); }
-    public ResourceLocation getId() { return this.data.getId(); }
+    @Override
+    public void broadcastChanges() {
+        super.broadcastChanges();
+
+        if(level.getBlockEntity(pos) instanceof BlockEntityControllerBase controller) {
+            if(controller.isFormed() == this.isFormed()) return;
+            this.data.set(0, controller.isFormed() ? 1 : 0);
+        }
+    }
 }

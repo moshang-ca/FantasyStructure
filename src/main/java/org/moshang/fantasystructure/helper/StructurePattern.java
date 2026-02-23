@@ -30,7 +30,6 @@ public record StructurePattern(Map<BlockPos, BlockInfo> blockPattern, BlockPos c
         }
 
         Map<BlockPos, BlockInfo> rotatedMap = new HashMap<>();
-        List<BlockPos> positions = new ArrayList<>();
 
         for(Map.Entry<BlockPos, BlockInfo> entry : pattern.entrySet()) {
             rotatedMap.put(
@@ -42,6 +41,7 @@ public record StructurePattern(Map<BlockPos, BlockInfo> blockPattern, BlockPos c
         return new StructurePattern(rotatedMap, rotatePos(controllerPos, rotation));
     }
 
+    // TODO: Rewrite to check in async threads.
     public boolean matches(Level level, BlockPos pos) {
         for (Map.Entry<BlockPos, BlockInfo> entry : blockPattern.entrySet()) {
             BlockPos worldPos = pos.offset(entry.getKey());
@@ -70,11 +70,6 @@ public record StructurePattern(Map<BlockPos, BlockInfo> blockPattern, BlockPos c
         }
         buses.addAll(curBuses);
         return true;
-    }
-
-    @Override
-    public Map<BlockPos, BlockInfo> blockPattern() {
-        return blockPattern;
     }
 
     private static int getRelativeAngle(Direction from, Direction to) {

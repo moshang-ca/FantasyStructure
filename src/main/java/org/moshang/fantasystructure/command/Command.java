@@ -13,7 +13,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import org.moshang.fantasystructure.api.blockentity.BlockEntityEnergyBusBase;
+import org.moshang.fantasystructure.blockentity.container.BEEnergyBus;
 import org.moshang.fantasystructure.helper.blueprint.BlueprintEditor;
 
 import java.nio.file.Files;
@@ -38,7 +38,7 @@ public class Command {
                                         .then(Commands.argument("amounts", IntegerArgumentType.integer())
                                                 .executes(commandContext -> {
                                                     BlockEntity be = commandContext.getSource().getLevel().getBlockEntity(BlockPosArgument.getLoadedBlockPos(commandContext, "pos1"));
-                                                    if(be instanceof BlockEntityEnergyBusBase energyBusBase) {
+                                                    if(be instanceof BEEnergyBus energyBusBase) {
                                                         energyBusBase.setEnergyStorageDebug(IntegerArgumentType.getInteger(commandContext, "amounts"));
                                                         return SINGLE_SUCCESS;
                                                     }

@@ -36,7 +36,7 @@ public class ControllerScreen extends AbstractContainerScreen<ControllerMenu> {
     protected void renderLabels(GuiGraphics pGuiGraphics, int pMouseX, int pMouseY) {
         super.renderLabels(pGuiGraphics, pMouseX, pMouseY);
 
-        pGuiGraphics.drawString(font, Component.translatable(menu.getId().toLanguageKey()), 21, 20, 0xFFFFFFFF);
+        pGuiGraphics.drawString(font, Component.translatable(menu.getStructureID().toLanguageKey()), 21, 20, 0xFFFFFFFF);
         pGuiGraphics.drawString(font, menu.isFormed() ? "Formed" : "Not formed", 21, 32, 0xFFFFFFFF);
     }
 }

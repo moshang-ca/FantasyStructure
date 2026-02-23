@@ -9,7 +9,7 @@ import net.minecraftforge.client.model.generators.ModelFile;
 import net.minecraftforge.common.data.ExistingFileHelper;
 import net.minecraftforge.registries.ForgeRegistries;
 import org.moshang.fantasystructure.FantasyStructure;
-import org.moshang.fantasystructure.api.block.BlockItemBusBase;
+import org.moshang.fantasystructure.block.container.BlockItemBus;
 import org.moshang.fantasystructure.registry.FSBlocks;
 
 public class FSBlockStateProvider extends BlockStateProvider {
@@ -44,7 +44,7 @@ public class FSBlockStateProvider extends BlockStateProvider {
                         .modelFile(model)
                         .rotationY(((int) state.getValue(BlockStateProperties.HORIZONTAL_FACING).toYRot() + angleOffset) % 360)
                         .build(),
-                        BlockItemBusBase.TYPE
+                        BlockItemBus.TYPE
                 );
     }
 }

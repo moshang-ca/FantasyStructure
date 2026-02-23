@@ -1,6 +1,5 @@
 package org.moshang.fantasystructure.menu;
 
-import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.player.Inventory;
@@ -9,14 +8,14 @@ import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraftforge.energy.EnergyStorage;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.moshang.fantasystructure.api.blockentity.BlockEntityEnergyBusBase;
+import org.moshang.fantasystructure.blockentity.container.BEEnergyBus;
 import org.moshang.fantasystructure.registry.FSMenuType;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
 @ParametersAreNonnullByDefault
-@MethodsReturnNonnullByDefault
 public class EnergyBusMenu extends BaseMenu {
     private final EnergyStorage energyStorage;
 
@@ -30,7 +29,7 @@ public class EnergyBusMenu extends BaseMenu {
     public EnergyBusMenu(@Nullable MenuType<?> pMenuType, int pContainerId, Inventory playerInv, BlockPos pos) {
         super(pMenuType, pContainerId, pos);
         BlockEntity be = playerInv.player.level().getBlockEntity(pos);
-        if(be instanceof BlockEntityEnergyBusBase energyBus) {
+        if(be instanceof BEEnergyBus energyBus) {
             this.energyStorage = energyBus.getEnergyStorage();
         } else {
             this.energyStorage = new EnergyStorage(0);
@@ -41,7 +40,7 @@ public class EnergyBusMenu extends BaseMenu {
     }
 
     public static EnergyBusMenu createForServer(int pContainerId, Inventory playerInv, BlockEntity blockEntity) {
-        if(blockEntity instanceof BlockEntityEnergyBusBase be) {
+        if(blockEntity instanceof BEEnergyBus be) {
             return new EnergyBusMenu(
                     FSMenuType.ENERGY_BUS_MENU_TYPE.get(),
                     pContainerId, playerInv, be.getBlockPos()
@@ -67,6 +66,7 @@ public class EnergyBusMenu extends BaseMenu {
         return getEnergyStored() / (float)max;
     }
 
+    @NotNull
     @Override
     public ItemStack quickMoveStack(Player pPlayer, int pIndex) {
         return ItemStack.EMPTY;

@@ -1,5 +1,7 @@
 package org.moshang.fantasystructure.api.block;
 
+import lombok.Getter;
+import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
@@ -23,8 +25,13 @@ import org.moshang.fantasystructure.menu.ControllerMenu;
 import org.moshang.fantasystructure.menu.menuprovider.BlockMenuProvider;
 
 import javax.annotation.Nullable;
+import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.function.Supplier;
 
+@Getter
+@SuppressWarnings("deprecation")
+@ParametersAreNonnullByDefault
+@MethodsReturnNonnullByDefault
 public abstract class BlockControllerBase <T extends BlockEntityControllerBase> extends Block implements EntityBlock {
     private static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
 
@@ -95,11 +102,7 @@ public abstract class BlockControllerBase <T extends BlockEntityControllerBase> 
         if(!level.isClientSide && player instanceof ServerPlayer serverPlayer) {
             BlockEntity be = level.getBlockEntity(pos);
             if(be instanceof BlockEntityControllerBase controller) {
-                NetworkHooks.openScreen(serverPlayer, new BlockMenuProvider(controller, ControllerMenu.class), buf -> {
-                    buf.writeBlockPos(pos);
-                    buf.writeBoolean(controller.isFormed());
-                    buf.writeResourceLocation(controller.getId());
-                });
+                NetworkHooks.openScreen(serverPlayer, new BlockMenuProvider(controller, ControllerMenu.class), buf -> buf.writeBlockPos(pos));
 
                 return InteractionResult.CONSUME;
             }
@@ -107,10 +110,4 @@ public abstract class BlockControllerBase <T extends BlockEntityControllerBase> 
         return InteractionResult.sidedSuccess(level.isClientSide);
     }
 
-    public Supplier<BlockEntityType<T>> getBlockEntityTypeSupplier() {
-        return blockEntityTypeSupplier;
-    }
-    public Supplier<ResourceLocation> getPatternIdSupplier() {
-        return patternIdSupplier;
-    }
 }

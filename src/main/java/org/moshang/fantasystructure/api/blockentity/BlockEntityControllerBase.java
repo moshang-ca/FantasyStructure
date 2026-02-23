@@ -4,7 +4,12 @@ import com.google.common.collect.Table;
 import com.google.common.collect.Tables;
 import com.lowdragmc.lowdraglib.syncdata.IEnhancedManaged;
 import com.lowdragmc.lowdraglib.syncdata.IManagedStorage;
+import com.lowdragmc.lowdraglib.syncdata.annotation.DescSynced;
 import com.lowdragmc.lowdraglib.syncdata.annotation.Persisted;
+import com.lowdragmc.lowdraglib.syncdata.annotation.RPCMethod;
+import com.lowdragmc.lowdraglib.syncdata.blockentity.IAutoPersistBlockEntity;
+import com.lowdragmc.lowdraglib.syncdata.blockentity.IAutoSyncBlockEntity;
+import com.lowdragmc.lowdraglib.syncdata.blockentity.IRPCBlockEntity;
 import com.lowdragmc.lowdraglib.syncdata.field.FieldManagedStorage;
 import com.lowdragmc.lowdraglib.syncdata.field.ManagedFieldHolder;
 import com.mojang.logging.LogUtils;
@@ -36,7 +41,7 @@ import java.util.*;
 
 @ParametersAreNonnullByDefault
 @MethodsReturnNonnullByDefault
-public abstract class BlockEntityControllerBase extends BlockEntity implements IMachine, IEnhancedManaged {
+public abstract class BlockEntityControllerBase extends BlockEntity implements IMachine, IEnhancedManaged, IRPCBlockEntity, IAutoSyncBlockEntity, IAutoPersistBlockEntity {
     private static final ManagedFieldHolder MANAGED_FIELD_HOLDER = new ManagedFieldHolder(BlockEntityControllerBase.class);
     private final FieldManagedStorage syncStorage = new FieldManagedStorage(this);
 
@@ -58,12 +63,17 @@ public abstract class BlockEntityControllerBase extends BlockEntity implements I
     @Override
     public void scheduleRenderUpdate() {}
 
-    @Persisted @Getter
+    @Override
+    public IManagedStorage getRootStorage() {
+        return getSyncStorage();
+    }
+
+    @Getter @Persisted @DescSynced
     protected boolean formed = false;
     @Getter
     private StructurePattern pattern;
-    @Getter @Persisted
-    private ResourceLocation id;
+    @Getter @DescSynced
+    private final ResourceLocation id;
     private int ticks = 0;
     @Persisted
     private boolean needCheckBus = true;
@@ -128,17 +138,19 @@ public abstract class BlockEntityControllerBase extends BlockEntity implements I
         if (pattern == null) return;
 
         if(needCheckBus) {
-            formed = pattern.matches(level, worldPosition, buses);
-            initRecipeCapabilityProxies();
+            var formed = pattern.matches(level, worldPosition, buses);
+            setFormed(pattern.matches(level, worldPosition, buses));
+            resetRecipeCapabilityProxies();
             if(formed) {
                 this.needCheckBus = false;
                 recipeLogic.setStatus(true);
             }
         } else {
             var lastFormed = formed;
-            formed = pattern.matches(level, worldPosition);
+            var formed = pattern.matches(level, worldPosition);
+            setFormed(pattern.matches(level, worldPosition));
             if(lastFormed && !formed) {
-                markDirty();
+                markBusDirty();
             }
         }
     }
@@ -150,13 +162,25 @@ public abstract class BlockEntityControllerBase extends BlockEntity implements I
         }
     }
 
-    public void markDirty() {
+    public void markBusDirty() {
         needCheckBus = true;
         buses.clear();
     }
 
+    @RPCMethod
+    private void setFormed(boolean formed) {
+        if(this.formed == formed) return;
+        this.formed = formed;
+        setChanged();
+
+        if(level != null && !level.isClientSide) {
+            rpcToTracking(this, "setFormed", this.formed);
+        }
+    }
+
     @Override
     public @Nullable FSRecipe getModifyRecipe(FSRecipe recipe) {
+        //noinspection ConstantValue
         if(getMaxParallel(recipe) == null) return recipe; // This is necessary, as getMaxParallel() will be changed to return null.
         recipe = recipe.copy(getMaxParallel(recipe), false);
         return recipe;
@@ -191,12 +215,13 @@ public abstract class BlockEntityControllerBase extends BlockEntity implements I
         return recipeCapabilityProxies;
     }
 
-    private void initRecipeCapabilityProxies() {
+    private void resetRecipeCapabilityProxies() {
         recipeCapabilityProxies.clear();
         for(var bus : buses) {
             if(!recipeCapabilityProxies.contains(bus.getIo(), bus.getRecipeCapability())) {
                 recipeCapabilityProxies.put(bus.getIo(), bus.getRecipeCapability(), new ArrayList<>());
             }
+            //noinspection DataFlowIssue
             recipeCapabilityProxies.get(bus.getIo(), bus.getRecipeCapability()).add(bus.getRecipeHandler());
         }
     }

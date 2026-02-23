@@ -13,10 +13,10 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraftforge.items.IItemHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.moshang.fantasystructure.api.block.BlockItemBusBase;
-import org.moshang.fantasystructure.api.blockentity.BlockEntityItemBusBase;
 import org.moshang.fantasystructure.api.capacity.ComponentItemCapacity;
 import org.moshang.fantasystructure.api.slot.ExtendedItemStackHandler;
+import org.moshang.fantasystructure.block.container.BlockItemBus;
+import org.moshang.fantasystructure.blockentity.container.BEItemBus;
 import org.moshang.fantasystructure.registry.FSMenuType;
 import org.slf4j.Logger;
 
@@ -47,21 +47,21 @@ public class ItemBusMenu extends BaseMenu {
         int yAmount = this.componentCaps.getYAmount();
 
         IItemHandler handler;
-        if(playInv.player.level().getBlockEntity(pos) instanceof BlockEntityItemBusBase be) {
+        if(playInv.player.level().getBlockEntity(pos) instanceof BEItemBus be) {
             handler = be.getItemHandler();
         } else {                     // This is for safe.
-            handler = new ExtendedItemStackHandler(slotCount, componentCaps.getMaxStackSize());
+            handler = new ExtendedItemStackHandler(slotCount);
         }
         addSlotBox(handler, 0, x, y, 18, 18, xAmount, yAmount);
         addPlayerInventory(playInv, 8, 140);
     }
 
     public static ItemBusMenu createForServer(int pContainerId, Inventory playerInv, BlockEntity blockEntity) {
-        if(blockEntity instanceof BlockEntityItemBusBase be) {
+        if(blockEntity instanceof BEItemBus be) {
             return new ItemBusMenu(
                     FSMenuType.ITEM_BUS_MENU_TYPE.get(),
                     pContainerId, playerInv, be.getBlockPos(),
-                    be.getBlockState().getValue(BlockItemBusBase.TYPE)
+                    be.getBlockState().getValue(BlockItemBus.TYPE)
             );
         }
         return null;

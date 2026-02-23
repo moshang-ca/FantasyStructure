@@ -1,6 +1,7 @@
 package org.moshang.fantasystructure.menu;
 
 import com.mojang.logging.LogUtils;
+import lombok.Getter;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
@@ -10,13 +11,14 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.items.IItemHandler;
+import net.minecraftforge.items.SlotItemHandler;
 import org.jetbrains.annotations.Nullable;
-import org.moshang.fantasystructure.api.slot.ExtendedSlotItemHandler;
 import org.slf4j.Logger;
 
 import java.util.HashMap;
 import java.util.Map;
 
+@Getter
 public abstract class BaseMenu extends AbstractContainerMenu {
     private static final Map<Class<?>, MenuFactory<?>> factoryFunctions = new HashMap<>();
     private static final Logger LOGGER = LogUtils.getLogger();
@@ -48,19 +50,18 @@ public abstract class BaseMenu extends AbstractContainerMenu {
 
     public int addSlotLine(IItemHandler handler, int index, int x, int y, int amount, int dx) {
         for(int i = 0; i < amount; i++) {
-            addSlot(new ExtendedSlotItemHandler(handler, index, x, y));
+            addSlot(new SlotItemHandler(handler, index, x, y));
             x += dx;
             index++;
         }
         return index;
     }
 
-    public int addSlotBox(IItemHandler handler, int index, int x, int y, int dx, int dy, int xAmount, int yAmount) {
+    public void addSlotBox(IItemHandler handler, int index, int x, int y, int dx, int dy, int xAmount, int yAmount) {
         for(int j = 0; j < yAmount; j++) {
             index = addSlotLine(handler, index, x, y, xAmount, dy);
             y += dy;
         }
-        return index;
     }
 
     public void addPlayerInventory(Inventory playerInv, final int x, final int y) {
@@ -74,52 +75,51 @@ public abstract class BaseMenu extends AbstractContainerMenu {
     }
 
     // Will be added back after solve the issue of can not save item with count uppermore than it's max stack size
-    /*@Override
-    public boolean moveItemStackTo(ItemStack stack, int startIndex, int endIndex, boolean reverseDirection) {
-        boolean moved = false;
-
-        if(reverseDirection) {
-            int tmp = startIndex;
-            startIndex = endIndex;
-            endIndex = tmp;
-        }
-
-        for(int i = startIndex; i < endIndex && !stack.isEmpty(); i++) {
-            Slot targetSlot = this.slots.get(i);
-            ItemStack targetStack = targetSlot.getItem();
-
-            if(ItemStack.isSameItemSameTags(stack, targetStack)) {
-                int space = targetSlot.getMaxStackSize(targetStack) - targetStack.getCount();
-                if(space > 0) {
-                    int transfer =  Math.min(space, stack.getCount());
-                    targetStack.grow(transfer);
-                    stack.shrink(transfer);
-                    targetSlot.setChanged();
-                    return true;
-                }
-            }
-        }
-
-        for(int i = startIndex; i < endIndex && !stack.isEmpty(); i++) {
-            Slot targetSlot = this.slots.get(i);
-            if(targetSlot.getItem().isEmpty() && targetSlot.mayPlace(stack)) {
-                int transfer = Math.min(targetSlot.getMaxStackSize(stack), stack.getCount());
-                ItemStack newStack = stack.copy();
-                newStack.setCount(transfer);
-                targetSlot.set(newStack);
-                stack.shrink(transfer);
-                targetSlot.setChanged();
-                return true;
-            }
-        }
-
-        return false;
-    }*/
+    //@Override
+    // public boolean moveItemStackTo(ItemStack stack, int startIndex, int endIndex, boolean reverseDirection) {
+    //     boolean moved = false;
+    //
+    //     if(reverseDirection) {
+    //         int tmp = startIndex;
+    //         startIndex = endIndex;
+    //         endIndex = tmp;
+    //     }
+    //
+    //     for(int i = startIndex; i < endIndex && !stack.isEmpty(); i++) {
+    //         Slot targetSlot = this.slots.get(i);
+    //         ItemStack targetStack = targetSlot.getItem();
+    //
+    //         if(ItemStack.isSameItemSameTags(stack, targetStack)) {
+    //             int space = targetSlot.getMaxStackSize(targetStack) - targetStack.getCount();
+    //             if(space > 0) {
+    //                 int transfer =  Math.min(space, stack.getCount());
+    //                 targetStack.grow(transfer);
+    //                 stack.shrink(transfer);
+    //                 targetSlot.setChanged();
+    //                 return true;
+    //             }
+    //         }
+    //     }
+    //
+    //     for(int i = startIndex; i < endIndex && !stack.isEmpty(); i++) {
+    //         Slot targetSlot = this.slots.get(i);
+    //         if(targetSlot.getItem().isEmpty() && targetSlot.mayPlace(stack)) {
+    //             int transfer = Math.min(targetSlot.getMaxStackSize(stack), stack.getCount());
+    //             ItemStack newStack = stack.copy();
+    //             newStack.setCount(transfer);
+    //             targetSlot.set(newStack);
+    //             stack.shrink(transfer);
+    //             targetSlot.setChanged();
+    //             return true;
+    //         }
+    //     }
+    //
+    //     return false;
+    // }
 
     @Override
     public boolean stillValid(Player player) {
         return true;
     }
 
-    public BlockPos getPos() { return pos; }
 }
