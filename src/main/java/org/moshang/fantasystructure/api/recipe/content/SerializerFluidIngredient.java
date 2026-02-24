@@ -2,7 +2,7 @@ package org.moshang.fantasystructure.api.recipe.content;
 
 import com.google.gson.JsonElement;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraftforge.fluids.FluidStack;
+import com.lowdragmc.lowdraglib.side.fluid.FluidStack;
 import org.moshang.fantasystructure.api.recipe.ingredient.FluidIngredient;
 
 public class SerializerFluidIngredient implements IContentSerializer<FluidIngredient> {

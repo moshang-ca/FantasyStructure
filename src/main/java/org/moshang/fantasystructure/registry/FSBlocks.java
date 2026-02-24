@@ -8,9 +8,11 @@ import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import org.moshang.fantasystructure.FantasyStructure;
 import org.moshang.fantasystructure.api.capacity.ComponentEnergyCapacity;
+import org.moshang.fantasystructure.api.capacity.ComponentFluidCapacity;
 import org.moshang.fantasystructure.api.capacity.ComponentItemCapacity;
 import org.moshang.fantasystructure.api.capability.recipe.IO;
 import org.moshang.fantasystructure.block.container.BlockEnergyBus;
+import org.moshang.fantasystructure.block.container.BlockFluidBus;
 import org.moshang.fantasystructure.block.container.BlockItemBus;
 import org.moshang.fantasystructure.block.controller.BlockTestController;
 import org.moshang.fantasystructure.block.creative.BlockCreativeEnergySource;
@@ -57,6 +59,12 @@ public class FSBlocks {
     public static final RegistryObject<Block>[] ENERGY_OUTPUT_BUSES = List.of(
             register("tiny_energy_output_bus", () -> new BlockEnergyBus(3, ComponentEnergyCapacity.TINY, IO.OUT))
     ).toArray(RegistryObject[]::new);
+    public static final RegistryObject<Block>[] FLUID_INPUT_BUSES = List.of(
+            register("tiny_fluid_input_bus", () -> new BlockFluidBus(3, ComponentFluidCapacity.TINY, IO.IN))
+    ).toArray(RegistryObject[]::new);
+    public static final RegistryObject<Block>[] FLUID_OUTPUT_BUSES = List.of(
+            register("tiny_fluid_output_bus", () -> new BlockFluidBus(3, ComponentFluidCapacity.TINY, IO.IN))
+    ).toArray(RegistryObject[]::new);
 
     public static final RegistryObject<Block> CREATIVE_ENERGY_SOURCE = register("creative_energy_source", () -> new BlockCreativeEnergySource(3));
 
@@ -69,10 +77,8 @@ public class FSBlocks {
     private static <T extends Block> RegistryObject<T> register(String name, Supplier<T> block, int stackTo) {
         RegistryObject<T> toReturn = BLOCKS.register(name, block);
 
-        FSItems.ITEMS.register(
-                name,
-                () -> new BlockItem(toReturn.get(), new Item.Properties().stacksTo(stackTo))
-        );
+        FSItems.ITEMS.register(name,
+                () -> new BlockItem(toReturn.get(), new Item.Properties().stacksTo(stackTo)));
 
         AllBlocks.add(toReturn);
         return toReturn;

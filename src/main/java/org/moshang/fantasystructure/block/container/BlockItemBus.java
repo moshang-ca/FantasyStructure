@@ -60,12 +60,10 @@ public class BlockItemBus extends Block implements EntityBlock {
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> pBuilder) {
-        pBuilder.add(FACING);
-        pBuilder.add(TYPE);
-        pBuilder.add(IO_TYPE);
+        pBuilder.add(FACING, TYPE, IO_TYPE);
     }
 
-    @javax.annotation.Nullable
+    @Nullable
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext context) {
         Direction direction = context.getHorizontalDirection().getOpposite();
@@ -91,6 +89,7 @@ public class BlockItemBus extends Block implements EntityBlock {
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     public InteractionResult use(BlockState pState, Level pLevel, BlockPos pPos, Player pPlayer, InteractionHand pHand, BlockHitResult pHit) {
         if(!pLevel.isClientSide && pPlayer instanceof ServerPlayer serverPlayer) {
             BlockEntity be = pLevel.getBlockEntity(pPos);

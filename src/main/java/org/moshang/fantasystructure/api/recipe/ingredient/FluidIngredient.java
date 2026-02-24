@@ -17,7 +17,7 @@ import net.minecraft.util.GsonHelper;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
 import net.minecraftforge.common.crafting.CraftingHelper;
-import net.minecraftforge.fluids.FluidStack;
+import com.lowdragmc.lowdraglib.side.fluid.FluidStack;
 import net.minecraftforge.registries.ForgeRegistries;
 import org.jetbrains.annotations.Nullable;
 
@@ -55,7 +55,7 @@ public class FluidIngredient implements Predicate<FluidStack> {
     }
 
     public void toNetwork(FriendlyByteBuf buf) {
-        buf.writeCollection(Arrays.asList(this.getStacks()), (buf1, stack) -> stack.writeToPacket(buf1));
+        buf.writeCollection(Arrays.asList(this.getStacks()), (buf1, stack) -> stack.writeToBuf(buf1));
         buf.writeLong(this.amount);
         buf.writeNbt(this.nbt);
     }
@@ -109,7 +109,7 @@ public class FluidIngredient implements Predicate<FluidStack> {
 
     public FluidStack[] getStacks() {
         if(changed || this.fluidStacks == null) {
-            this.fluidStacks = Arrays.stream(this.values).flatMap(entry -> entry.getStacks().stream()).distinct().map(fluid -> new FluidStack(fluid, (int) amount, nbt)).toArray(FluidStack[]::new);
+            this.fluidStacks = Arrays.stream(this.values).flatMap(entry -> entry.getStacks().stream()).distinct().map(fluid -> FluidStack.create(fluid, amount, nbt)).toArray(FluidStack[]::new);
             this.changed = false;
         }
         return this.fluidStacks;
@@ -187,12 +187,13 @@ public class FluidIngredient implements Predicate<FluidStack> {
         if(json.has("tag")) {
             ResourceLocation resourceLocation = new ResourceLocation(GsonHelper.getAsString(json, "tag"));
             TagKey<Fluid> tagKey = TagKey.create(Registries.FLUID, resourceLocation);
+            return new TagValue(tagKey);
         }
         throw new JsonParseException("A fluid ingredient must be either fluid or tag");
     }
 
     public static FluidIngredient fromNetwork(FriendlyByteBuf buf) {
-        return FluidIngredient.fromValues(buf.readList(FluidStack::readFromPacket).stream().map(fluidStack -> new FluidValue(fluidStack.getFluid())), buf.readVarLong(), buf.readNbt());
+        return FluidIngredient.fromValues(buf.readList(FluidStack::readFromBuf).stream().map(fluidStack -> new FluidValue(fluidStack.getFluid())), buf.readVarLong(), buf.readNbt());
     }
 
     public interface Value {

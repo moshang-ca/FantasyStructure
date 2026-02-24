@@ -1,8 +1,10 @@
 package org.moshang.fantasystructure.api.capacity;
 
+import lombok.Getter;
 import net.minecraft.util.StringRepresentable;
 import org.jetbrains.annotations.NotNull;
 
+@Getter
 public enum ComponentFluidCapacity implements StringRepresentable {
     TINY(1, 8000),
     SMALL(1, 12000),
@@ -15,19 +17,12 @@ public enum ComponentFluidCapacity implements StringRepresentable {
     ENDLESS(540, Integer.MAX_VALUE);
 
 
-    private final int slots;
+    private final int tanks;
     private final int maxCapacity;
 
     ComponentFluidCapacity(int size, int maxCapacity) {
-        this.slots = size;
+        this.tanks = size;
         this.maxCapacity = maxCapacity;
-    }
-
-    public int getSlots() {
-        return slots;
-    }
-    public int getMaxCapacity() {
-        return maxCapacity;
     }
 
     @NotNull

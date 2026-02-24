@@ -24,7 +24,10 @@ public class EnergyRecipeHandler extends RecipeHandler<Integer> {
             var extracted = storage.extractEnergy(required, simulate);
             required -= extracted;
         } else {
-            var received = storage.receiveEnergy(required, simulate);
+            int canReceive = storage.getMaxEnergyStored() - storage.getEnergyStored();
+            int toReceive = Math.min(canReceive, required);
+
+            var received = storage.receiveEnergy(toReceive, simulate);
             required -= received;
         }
         return required > 0 ? List.of(required) : null;

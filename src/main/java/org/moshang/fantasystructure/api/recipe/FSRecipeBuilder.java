@@ -13,7 +13,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.RecipeSerializer;
-import net.minecraftforge.fluids.FluidStack;
+import com.lowdragmc.lowdraglib.side.fluid.FluidStack;
 import net.minecraftforge.registries.ForgeRegistries;
 import org.jetbrains.annotations.Nullable;
 import org.moshang.fantasystructure.api.capability.recipe.RecipeCapability;
@@ -28,6 +28,7 @@ import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
+@SuppressWarnings({"unused"})
 @MethodsReturnNonnullByDefault
 @ParametersAreNonnullByDefault
 @Accessors(fluent = true, chain = true)
@@ -63,7 +64,9 @@ public class FSRecipeBuilder {
         this.recipeType = recipeType;
         copy.inputs().forEach((k, v) -> this.inputs.put(k, new ArrayList<>(v)));
         copy.outputs().forEach((k, v) -> this.outputs.put(k, new ArrayList<>(v)));
-        this.data = copy.data().copy();
+        if (copy.data() != null) {
+            this.data = copy.data().copy();
+        }
         this.duration = copy.duration();
     }
 
@@ -179,6 +182,7 @@ public class FSRecipeBuilder {
     public FSRecipeBuilder inputFluids(FluidStack... inputs) {
         return input(FluidRecipeCapability.INSTANCE, Arrays.stream(inputs).map(fluid -> {
             ResourceLocation fluidID = ForgeRegistries.FLUIDS.getKey(fluid.getFluid());
+            assert fluidID != null;
             return FluidIngredient.of(TagKey.create(ForgeRegistries.FLUIDS.getRegistryKey(), new ResourceLocation("forge", fluidID.getPath())), fluid.getAmount());
         }).toArray(FluidIngredient[]::new));
     }
