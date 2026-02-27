@@ -7,6 +7,8 @@ import net.minecraftforge.network.NetworkRegistry;
 import net.minecraftforge.network.PacketDistributor;
 import net.minecraftforge.network.simple.SimpleChannel;
 import org.moshang.fantasystructure.FantasyStructure;
+import org.moshang.fantasystructure.network.data.FilterTankWidgetClickPacket;
+import org.moshang.fantasystructure.network.data.TankWidgetClickPacket;
 import org.slf4j.Logger;
 
 @SuppressWarnings("removal")
@@ -28,6 +30,15 @@ public class FSMessages {
                 .clientAcceptedVersions(PROTOCOL_VERSION::equals)
                 .serverAcceptedVersions(PROTOCOL_VERSION::equals)
                 .simpleChannel();
+
+        INSTANCE.registerMessage(id(), TankWidgetClickPacket.class,
+                TankWidgetClickPacket::encode,
+                TankWidgetClickPacket::decode,
+                TankWidgetClickPacket::handle);
+        INSTANCE.registerMessage(id(), FilterTankWidgetClickPacket.class,
+                FilterTankWidgetClickPacket::encode,
+                FilterTankWidgetClickPacket::decode,
+                FilterTankWidgetClickPacket::handle);
 
         LOGGER.info("FSMessage init complete!");
     }

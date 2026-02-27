@@ -10,7 +10,7 @@ import org.moshang.fantasystructure.menu.EnergyBusMenu;
 
 @SuppressWarnings("removal")
 public class EnergyBusScreen extends AbstractContainerScreen<EnergyBusMenu> {
-    private static final ResourceLocation GUI = new ResourceLocation(FantasyStructure.MODID, "textures/gui/gui_bar.png");
+    private static final ResourceLocation GUI = new ResourceLocation(FantasyStructure.MODID, "textures/gui/gui_energy_bar.png");
 
     private static final int ENERGY_BAR_HEIGHT = 61;
     private static final int ENERGY_BAR_WIDTH = 20;

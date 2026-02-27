@@ -10,11 +10,11 @@ public enum ComponentFluidCapacity implements StringRepresentable {
     SMALL(1, 12000),
     MEDIUM(3, 32000),
     LARGE(5, 128000),
-    GREAT(9, 256000),
-    GIANT(9, 512000),
-    COLOSSAL(9, 1024000),
-    TITANIC(9, 4096000),
-    ENDLESS(540, Integer.MAX_VALUE);
+    GREAT(7, 256000),
+    GIANT(7, 512000),
+    COLOSSAL(7, 1024000),
+    TITANIC(7, 4096000),
+    ENDLESS(540, Integer.MAX_VALUE); // The Endless will be designed in a scrollable widget.
 
 
     private final int tanks;

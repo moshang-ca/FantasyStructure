@@ -14,6 +14,7 @@ import net.minecraftforge.registries.ForgeRegistries;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.function.Predicate;
 import java.util.stream.LongStream;
@@ -34,7 +35,7 @@ public class ExtendedFluidTank implements IFluidTransfer, ITagSerializable<Compo
         this.stacks = Stream.generate(FluidStack::empty).limit(tanks).toArray(FluidStack[]::new);
         this.capacities = capacities;
         this.validators = validators;
-        this.filters = new ArrayList<>(tanks);
+        this.filters = new ArrayList<>(Collections.nCopies(tanks, null));
         this.onContentChanged = onContentChanged;
     }
 
@@ -50,6 +51,10 @@ public class ExtendedFluidTank implements IFluidTransfer, ITagSerializable<Compo
         this.onContentChanged = other.onContentChanged;
     }
 
+    public static ExtendedFluidTank create(int tanks, long capacity) {
+        return create(tanks, capacity, () -> {});
+    }
+
     public static ExtendedFluidTank create(int tanks, long capacity, Runnable onContentsChanged) {
         long[] capacities = LongStream.generate(() -> capacity).limit(tanks).toArray();
         return create(tanks, capacities, onContentsChanged);
@@ -62,23 +67,25 @@ public class ExtendedFluidTank implements IFluidTransfer, ITagSerializable<Compo
     }
 
     @SuppressWarnings("UnusedReturnValue")
-    public ExtendedFluidTank setValidatorOnTank(int tank, Predicate<FluidStack> validator) {
+    public ExtendedFluidTank setValidatorInTank(int tank, Predicate<FluidStack> validator) {
         this.validators[tank] = validator;
         return this;
     }
 
+    @SuppressWarnings("UnusedReturnValue")
     public ExtendedFluidTank setFilter(int tank, Fluid fluid) {
         if (tank >= 0 && tank < tanks) {
             this.filters.set(tank, fluid);
-            setValidatorOnTank(tank, stack -> stack.isFluidEqual(FluidStack.create(fluid, 1)));
+            setValidatorInTank(tank, stack -> stack.isFluidEqual(FluidStack.create(fluid, 1)));
         }
         return this;
     }
 
+    @SuppressWarnings("UnusedReturnValue")
     public ExtendedFluidTank clearFilter(int tank) {
         if (tank >= 0 && tank < tanks) {
             this.filters.set(tank, null);
-            setValidatorOnTank(tank, stack -> true);
+            setValidatorInTank(tank, stack -> true);
         }
         return this;
     }
@@ -95,6 +102,7 @@ public class ExtendedFluidTank implements IFluidTransfer, ITagSerializable<Compo
         } else {
             stacks[tank] = fluidStack.copy();
         }
+        onContentsChanged();
     }
 
     @Override
@@ -119,6 +127,7 @@ public class ExtendedFluidTank implements IFluidTransfer, ITagSerializable<Compo
             if(!stacks[tank].isFluidEqual(resource)) {
                 return 0;
             }
+            return Math.min(resource.getAmount(), capacities[tank] - stacks[tank].getAmount());
         }
         if(stacks[tank].isEmpty()) {
             stacks[tank] = FluidStack.create(resource, Math.min(resource.getAmount(), capacities[tank]));
@@ -175,12 +184,15 @@ public class ExtendedFluidTank implements IFluidTransfer, ITagSerializable<Compo
         return true;
     }
 
+    /***
+     * Rewrite for forge, the return value must be cast to {@code ExtendedFluidTank} or, basically, {@code IFluidTransfer}
+     */
     @Override
     public @NotNull Object createSnapshot() {
         return deepCopy();
     }
 
-    public @NotNull ExtendedFluidTank deepCopy() {
+    private @NotNull ExtendedFluidTank deepCopy() {
         return new ExtendedFluidTank(this);
     }
 

@@ -20,16 +20,14 @@ import net.minecraftforge.fml.loading.FMLPaths;
 import org.moshang.fantasystructure.api.recipe.ingredient.SizedIngredient;
 import org.moshang.fantasystructure.client.screen.ControllerScreen;
 import org.moshang.fantasystructure.client.screen.EnergyBusScreen;
+import org.moshang.fantasystructure.client.screen.FluidBusScreen;
 import org.moshang.fantasystructure.client.screen.ItemBusScreen;
 import org.moshang.fantasystructure.command.Command;
 import org.moshang.fantasystructure.helper.blueprint.BlueprintEditor;
 import org.moshang.fantasystructure.helper.blueprint.BlueprintManager;
 import org.moshang.fantasystructure.helper.builder.StructureBuilderManager;
 import org.moshang.fantasystructure.network.FSMessages;
-import org.moshang.fantasystructure.registry.FSBlockEntities;
-import org.moshang.fantasystructure.registry.FSBlocks;
-import org.moshang.fantasystructure.registry.FSItems;
-import org.moshang.fantasystructure.registry.FSMenuType;
+import org.moshang.fantasystructure.registry.*;
 import org.moshang.fantasystructure.registry.recipe.FSRecipes;
 import org.slf4j.Logger;
 
@@ -69,6 +67,7 @@ public class FantasyStructure {
         FSBlocks.BLOCKS.register(modEventBus);
         FSBlockEntities.BLOCK_ENTITIES.register(modEventBus);
         FSItems.ITEMS.register(modEventBus);
+        FSCreativeModeTabs.TABS.register(modEventBus);
 
         FSMenuType.registerMenuFactories();
         FSRecipes.initRecipeCapabilities();
@@ -96,6 +95,7 @@ public class FantasyStructure {
                 MenuScreens.register(FSMenuType.CONTROLLER_MENU_TYPE.get(), ControllerScreen::new);
                 MenuScreens.register(FSMenuType.ITEM_BUS_MENU_TYPE.get(), ItemBusScreen::new);
                 MenuScreens.register(FSMenuType.ENERGY_BUS_MENU_TYPE.get(), EnergyBusScreen::new);
+                MenuScreens.register(FSMenuType.FLUID_BUS_MENU_TYPE.get(), FluidBusScreen::new);
             });
         }
     }

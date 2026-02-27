@@ -20,10 +20,7 @@ public class EnergyBusMenu extends BaseMenu {
     private final EnergyStorage energyStorage;
 
     public EnergyBusMenu(int pContainerId, Inventory playerInv, FriendlyByteBuf buf) {
-        this(
-                FSMenuType.ENERGY_BUS_MENU_TYPE.get(),
-                pContainerId, playerInv, buf.readBlockPos()
-        );
+        this(FSMenuType.ENERGY_BUS_MENU_TYPE.get(), pContainerId, playerInv, buf.readBlockPos());
     }
 
     public EnergyBusMenu(@Nullable MenuType<?> pMenuType, int pContainerId, Inventory playerInv, BlockPos pos) {

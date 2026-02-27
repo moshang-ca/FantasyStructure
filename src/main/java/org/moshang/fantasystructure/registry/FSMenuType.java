@@ -6,10 +6,7 @@ import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import org.moshang.fantasystructure.FantasyStructure;
-import org.moshang.fantasystructure.menu.BaseMenu;
-import org.moshang.fantasystructure.menu.ControllerMenu;
-import org.moshang.fantasystructure.menu.EnergyBusMenu;
-import org.moshang.fantasystructure.menu.ItemBusMenu;
+import org.moshang.fantasystructure.menu.*;
 
 public class FSMenuType {
     public static final DeferredRegister<MenuType<?>> MENU_TYPES = DeferredRegister.create(
@@ -19,10 +16,12 @@ public class FSMenuType {
     public static final RegistryObject<MenuType<ControllerMenu>> CONTROLLER_MENU_TYPE = MENU_TYPES.register("controller_menu", () -> IForgeMenuType.create(ControllerMenu::new));
     public static final RegistryObject<MenuType<ItemBusMenu>> ITEM_BUS_MENU_TYPE = MENU_TYPES.register("item_bus_menu", () -> IForgeMenuType.create(ItemBusMenu::new));
     public static final RegistryObject<MenuType<EnergyBusMenu>> ENERGY_BUS_MENU_TYPE = MENU_TYPES.register("energy_bus_menu", () -> IForgeMenuType.create(EnergyBusMenu::new));
+    public static final RegistryObject<MenuType<FluidBusMenu>> FLUID_BUS_MENU_TYPE = MENU_TYPES.register("fluid_bus_menu", () -> IForgeMenuType.create(FluidBusMenu::new));
 
     public static void registerMenuFactories() {
         BaseMenu.register(ControllerMenu.class, ControllerMenu::createForServer);
         BaseMenu.register(ItemBusMenu.class, ItemBusMenu::createForServer);
         BaseMenu.register(EnergyBusMenu.class, EnergyBusMenu::createForServer);
+        BaseMenu.register(FluidBusMenu.class, FluidBusMenu::createForServer);
     }
 }

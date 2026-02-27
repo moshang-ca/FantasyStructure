@@ -2,6 +2,7 @@ package org.moshang.fantasystructure.api.capacity;
 
 import lombok.Getter;
 import net.minecraft.util.StringRepresentable;
+import org.jetbrains.annotations.NotNull;
 
 @Getter
 public enum ComponentItemCapacity implements StringRepresentable {
@@ -32,7 +33,7 @@ public enum ComponentItemCapacity implements StringRepresentable {
     }
 
     @Override
-    public String getSerializedName() {
+    public @NotNull String getSerializedName() {
         return name().toLowerCase();
     }
 }
