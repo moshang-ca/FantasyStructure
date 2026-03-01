@@ -1,6 +1,7 @@
 package org.moshang.fantasystructure.helper.blueprint;
 
 import com.mojang.logging.LogUtils;
+import lombok.Getter;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
 import org.moshang.fantasystructure.Config;
@@ -26,7 +27,9 @@ public class BlueprintManager {
     private static volatile boolean initialized = false;
 
     private static int totalFiles = 0;
+    @Getter
     private static int loadedCounts = 0;
+    @Getter
     private static int skippedCounts = 0;
 
     private static final Logger LOGGER = LogUtils.getLogger();
@@ -119,12 +122,6 @@ public class BlueprintManager {
     }
     public static List<ResourceLocation> getAvailableBlueprintIds() {
         return new ArrayList<>(REGISTRY.keySet());
-    }
-    public static int getLoadedCounts() {
-        return loadedCounts;
-    }
-    public static int getSkippedCounts() {
-        return skippedCounts;
     }
 
     private static class LoadResult {

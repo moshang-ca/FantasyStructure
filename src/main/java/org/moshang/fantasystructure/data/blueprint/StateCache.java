@@ -1,5 +1,7 @@
 package org.moshang.fantasystructure.data.blueprint;
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import com.mojang.logging.LogUtils;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.Block;
@@ -12,18 +14,24 @@ import org.slf4j.Logger;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
 @SuppressWarnings("removal")
 public class StateCache {
-    private static final Map<String, BlockState> GLOBAL_BLOCK_STATES = new ConcurrentHashMap<>(1024);
+    private static final Cache<String, BlockState> GLOBAL_BLOCK_STATES = CacheBuilder.newBuilder().maximumSize(1024).expireAfterAccess(5, TimeUnit.MINUTES).softValues().build();
 
     private static final Logger LOGGER = LogUtils.getLogger();
 
     private StateCache() {}
 
     public static BlockState parse(String stateString) {
-        return GLOBAL_BLOCK_STATES.computeIfAbsent(stateString, StateCache::parseUncached);
+        try {
+            return GLOBAL_BLOCK_STATES.get(stateString, () -> parseUncached(stateString));
+        } catch (ExecutionException e) {
+            LOGGER.error("Error while parsing state string: {}", stateString, e);
+            return Blocks.AIR.defaultBlockState();
+        }
     }
 
     private static BlockState parseUncached(String stateString) {

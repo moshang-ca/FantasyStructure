@@ -1,24 +1,19 @@
 package org.moshang.fantasystructure.helper;
 
 import com.mojang.logging.LogUtils;
+import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.state.BlockState;
-import org.moshang.fantasystructure.api.blockentity.IBus;
 import org.moshang.fantasystructure.data.BlockInfo;
 import org.slf4j.Logger;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-public record StructurePattern(Map<BlockPos, BlockInfo> blockPattern, BlockPos controllerPos) {
+public record StructurePattern(Long2ObjectOpenHashMap<BlockInfo> blockPattern, BlockPos controllerPos) {
     private static final Logger LOGGER = LogUtils.getLogger();
 
-    public static StructurePattern createRotated(Map<BlockPos, BlockInfo> pattern, BlockPos controllerPos,
+    public static StructurePattern createRotated(Long2ObjectOpenHashMap<BlockInfo> pattern, BlockPos controllerPos,
                                                  Direction origin, Direction current) {
         if(origin == current) {
             return new StructurePattern(pattern, controllerPos);
@@ -29,46 +24,29 @@ public record StructurePattern(Map<BlockPos, BlockInfo> blockPattern, BlockPos c
             return new StructurePattern(pattern, controllerPos);
         }
 
-        Map<BlockPos, BlockInfo> rotatedMap = new HashMap<>();
+        Long2ObjectOpenHashMap<BlockInfo> rotatedMap = new Long2ObjectOpenHashMap<>();
 
-        for(Map.Entry<BlockPos, BlockInfo> entry : pattern.entrySet()) {
+        for(var entry : pattern.long2ObjectEntrySet()) {
             rotatedMap.put(
-                    rotatePos(entry.getKey(), rotation),
+                    rotatePos(BlockPos.of(entry.getLongKey()), rotation),
                     rotateBlockInfo(entry.getValue(), rotation)
             );
         }
 
-        return new StructurePattern(rotatedMap, rotatePos(controllerPos, rotation));
+        return new StructurePattern(rotatedMap, BlockPos.of(rotatePos(controllerPos, rotation)));
     }
 
-    // TODO: Rewrite to check in async threads.
-    public boolean matches(Level level, BlockPos pos) {
-        for (Map.Entry<BlockPos, BlockInfo> entry : blockPattern.entrySet()) {
-            BlockPos worldPos = pos.offset(entry.getKey());
-            BlockInfo info = entry.getValue();
-            if (!info.matches(level, worldPos)) {
-                LOGGER.warn("此处有问题：{}， 原因：expected: {}, now: {}", worldPos, info.getExpectedState(), level.getBlockState(worldPos));
-                return false;
-            }
+    public boolean matches(Level level, BlockPos controllerPos, BlockPos checkPos) {
+        var relativePos = checkPos.subtract(controllerPos);
+        var info = blockPattern.get(relativePos.asLong());
+        if(info == null) {
+            LOGGER.error("info is null, check pos is {}, relative pos is {}, controller pos is {}", checkPos, relativePos, controllerPos);
+            return false;
         }
-        return true;
-    }
-
-    public boolean matches(Level level, BlockPos pos, List<IBus> buses) {
-        var curBuses = new ArrayList<IBus>();
-        for (Map.Entry<BlockPos, BlockInfo> entry : blockPattern.entrySet()) {
-            BlockPos worldPos = pos.offset(entry.getKey());
-            BlockInfo info = entry.getValue();
-            if (!info.matches(level, worldPos)) {
-                LOGGER.warn("此处有问题：{}， 原因：expected: {}, now: {}", worldPos, info.getExpectedState(), level.getBlockState(worldPos));
-                return false;
-            } else {
-                if(level.getBlockEntity(worldPos) instanceof IBus bus) {
-                    curBuses.add(bus);
-                }
-            }
+        if(!info.matches(level, checkPos)) {
+            LOGGER.warn("Issue at：{}， expected: {}, now: {}", checkPos, info.getExpectedState(), level.getBlockState(checkPos));
+            return false;
         }
-        buses.addAll(curBuses);
         return true;
     }
 
@@ -87,12 +65,12 @@ public record StructurePattern(Map<BlockPos, BlockInfo> blockPattern, BlockPos c
         };
     }
 
-    private static BlockPos rotatePos(BlockPos from, Rotation rotation) {
+    private static long rotatePos(BlockPos from, Rotation rotation) {
         return switch (rotation) {
-            case CLOCKWISE_90 -> new BlockPos(-from.getZ(), from.getY(), from.getX());
-            case CLOCKWISE_180 -> new BlockPos(-from.getX(), from.getY(), -from.getZ());
-            case COUNTERCLOCKWISE_90 -> new BlockPos(from.getZ(), from.getY(), -from.getX());
-            default -> from;
+            case CLOCKWISE_90 -> BlockPos.asLong(-from.getZ(), from.getY(), from.getX());
+            case CLOCKWISE_180 -> BlockPos.asLong(-from.getX(), from.getY(), -from.getZ());
+            case COUNTERCLOCKWISE_90 -> BlockPos.asLong(from.getZ(), from.getY(), -from.getX());
+            default -> from.asLong();
         };
     }
 

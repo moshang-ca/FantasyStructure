@@ -93,23 +93,23 @@ public interface IMachine extends IRecipeCapabilityHolder {
         return recipe;
     }
 
-/*    default boolean beforeWorking(FSRecipe recipe) {
-        return false;
-    }
-
-    default boolean onWorking() {
-        return false;
-    }
-
-    default void onWaiting() {
-
-    }
-
-    default void afterWorking() {
-
-    }
-
-    default void onRecipeFinish() {
-
-    }*/
+//    default boolean beforeWorking(FSRecipe recipe) {
+//     return false;
+// }
+//
+// default boolean onWorking() {
+//     return false;
+// }
+//
+// default void onWaiting() {
+//
+// }
+//
+// default void afterWorking() {
+//
+// }
+//
+// default void onRecipeFinish() {
+//
+// }
 }

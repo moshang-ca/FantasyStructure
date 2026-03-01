@@ -1,6 +1,9 @@
 package org.moshang.fantasystructure.helper.builder;
 
 import com.mojang.logging.LogUtils;
+import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
+import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
+import lombok.Getter;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
@@ -19,12 +22,15 @@ import org.slf4j.Logger;
 import java.util.*;
 
 public class StructureBuilder {
+    @Getter
     private final Level level;
+    @Getter
     private final BlockPos center;
     private final ItemStack builderStack;
-    private final Queue<Map.Entry<BlockPos, BlockInfo>> taskQueue = new LinkedList<>();
-    private final Map<BlockPos, BlockInfo> failedBlock = new HashMap<>();
+    private final Queue<Long2ObjectMap.Entry<BlockInfo>> taskQueue = new LinkedList<>();
+    private final Long2ObjectOpenHashMap<BlockInfo> failedBlock = new Long2ObjectOpenHashMap<>();
 
+    @Getter
     private boolean building = false;
     private boolean isCreative = false;
 
@@ -36,10 +42,10 @@ public class StructureBuilder {
         this.center = center;
         this.builderStack = builderStack;
 
-        Map<BlockPos, BlockInfo> patternMap = pattern.blockPattern();
+        Long2ObjectOpenHashMap<BlockInfo> patternMap = pattern.blockPattern();
 
-        for(Map.Entry<BlockPos, BlockInfo> entry : patternMap.entrySet()) {
-            BlockPos relativePos = entry.getKey();
+        for(var entry : patternMap.long2ObjectEntrySet()) {
+            BlockPos relativePos = BlockPos.of(entry.getLongKey());
             BlockInfo blockInfo = entry.getValue();
             if(!relativePos.equals(BlockPos.ZERO) && !blockInfo.isAir()) {
                 taskQueue.offer(entry);
@@ -60,9 +66,9 @@ public class StructureBuilder {
         int placed = 0;
 
         while(!taskQueue.isEmpty() && placed < BLOCKS_PER_TICK) {
-            Map.Entry<BlockPos, BlockInfo> entry = taskQueue.poll();
+            var entry = taskQueue.poll();
             BlockInfo blockInfo = entry.getValue();
-            BlockPos worldPos = center.offset(entry.getKey());
+            BlockPos worldPos = center.offset(BlockPos.of(entry.getLongKey()));
             BlockState targetState = blockInfo.getExpectedState();
             Set<TagKey<Block>> blockTagKeys = blockInfo.getAllowedTags();
 
@@ -73,7 +79,7 @@ public class StructureBuilder {
             BlockState state = level.getBlockState(worldPos);
             if(!state.isAir()) {
                 if(!state.equals(targetState)) {
-                    failedBlock.put(entry.getKey(), entry.getValue());
+                    failedBlock.put(entry.getLongKey(), entry.getValue());
                     placed++;
                 }
                 continue;
@@ -85,12 +91,12 @@ public class StructureBuilder {
                 if(materialStack != null && materialStack.getItem() instanceof BlockItem blockItem) {
                     BlockState materialState = blockInfo.createTagBlockState(blockItem.getBlock());
                     if (!level.setBlock(worldPos, materialState, 2)) {
-                        failedBlock.put(entry.getKey(), entry.getValue());
+                        failedBlock.put(entry.getLongKey(), entry.getValue());
                     }
                 }
             } else {
                 if (!level.setBlock(worldPos, targetState, 2)) {
-                    failedBlock.put(entry.getKey(), entry.getValue());
+                    failedBlock.put(entry.getLongKey(), entry.getValue());
                 }
             }
             placed++;
@@ -104,7 +110,7 @@ public class StructureBuilder {
     private void complete() {
         building = false;
         if(!failedBlock.isEmpty()) {
-            failedBlock.entrySet().forEach(taskQueue::offer);
+            failedBlock.long2ObjectEntrySet().forEach(taskQueue::offer);
             failedBlock.clear();
             StructureBuilderManager.addIncomplete(this);
         } else {
@@ -112,13 +118,4 @@ public class StructureBuilder {
         }
     }
 
-    public Level getLevel() {
-        return level;
-    }
-    public BlockPos getCenter() {
-        return center;
-    }
-    public boolean isBuilding() {
-        return building;
-    }
 }

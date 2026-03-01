@@ -1,6 +1,8 @@
 package org.moshang.fantasystructure.helper.blueprint;
 
 import com.mojang.logging.LogUtils;
+import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
+import lombok.Getter;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
@@ -29,6 +31,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+@SuppressWarnings({"unused", "FieldCanBeLocal"})
 public class Blueprint {
     private final ResourceLocation id;
     private final String name;
@@ -38,6 +41,8 @@ public class Blueprint {
     private final List<String> requiredMods;
 
     private volatile Map<BlockPos, BlockInfo> patternCache;
+    private volatile Long2ObjectOpenHashMap<BlockInfo> patternCached;
+    @Getter
     private volatile Map<ResourceLocation, Integer> materialMap;
     private volatile Map<Integer, TagKey<Block>> tagTableMap;
     private volatile BlockState[] blockTypeTable;
@@ -182,7 +187,7 @@ public class Blueprint {
 
     }
 
-    public Map<BlockPos, BlockInfo> getPattern() {
+    public Long2ObjectOpenHashMap<BlockInfo> getPattern() {
         if (loadingFailed) {
             throw new IllegalStateException("Blueprint loading failed: " + failureReason);
         }
@@ -191,7 +196,7 @@ public class Blueprint {
             synchronized (this) {
                 if(patternCache == null) {
                     try {
-                        patternCache = loadPatternInternal();
+                        patternCached = loadPatternInternal();
                     } catch (Exception e) {
                         loadingFailed = true;
                         failureReason = e.getMessage();
@@ -201,14 +206,15 @@ public class Blueprint {
             }
         }
 
-        return patternCache;
+        return patternCached;
     }
 
     public StructurePattern toStructurePattern(Direction currentDir) {
         return StructurePattern.createRotated(getPattern(), controllerOffset, originalDir, currentDir);
     }
 
-    private Map<BlockPos, BlockInfo> loadPatternInternal() throws IOException {
+    // Use long2Object map.
+    private Long2ObjectOpenHashMap<BlockInfo> loadPatternInternal() {
         if(blockTypeTable == null)
             throw new IllegalStateException("Type table not loaded");
 
@@ -226,7 +232,7 @@ public class Blueprint {
             channel.read(voxelData);
             voxelData.flip();
 
-            Map<BlockPos, BlockInfo> pattern = new HashMap<>();
+            Long2ObjectOpenHashMap<BlockInfo> pattern = new Long2ObjectOpenHashMap<>();
             Map<ResourceLocation, Integer> tempMaterialMap = new HashMap<>();
             decodeRLEToPattern(voxelData, pattern, tempMaterialMap);
 
@@ -240,7 +246,8 @@ public class Blueprint {
         }
     }
 
-    private void decodeRLEToPattern(ByteBuffer data, Map<BlockPos, BlockInfo> pattern,
+    // Use long2Object map
+    private void decodeRLEToPattern(ByteBuffer data, Long2ObjectOpenHashMap<BlockInfo> pattern,
                                     Map<ResourceLocation, Integer> materialMap) {
         int voxelIndex = 0;
 
@@ -267,7 +274,7 @@ public class Blueprint {
                                 if(curX >= sizeX) break;
 
                                 BlockPos pos = new BlockPos(curX, y, z).subtract(controllerOffset);
-                                pattern.put(pos, new BlockInfo(state));
+                                pattern.put(pos.asLong(), new BlockInfo(state));
                             }
                         }
                         if(materialMap != null) {
@@ -282,10 +289,6 @@ public class Blueprint {
                 }
             }
         }
-    }
-
-    public Map<ResourceLocation, Integer> getMaterialMap() {
-        return materialMap;
     }
 
     public static class BlueprintLoadException extends RuntimeException {

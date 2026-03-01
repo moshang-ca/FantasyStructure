@@ -19,9 +19,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
+@SuppressWarnings("CallToPrintStackTrace")
 public class RecipeLogic implements IEnhancedManaged {
     public enum Status {
-        IDLE, WORKING, SUSPEND;
+        IDLE, WORKING, SUSPEND
     }
 
     @Getter
@@ -277,10 +278,6 @@ public class RecipeLogic implements IEnhancedManaged {
                 setStatus(Status.IDLE);
             }
         }
-    }
-
-    public int getMaxProgress() {
-        return duration;
     }
 
     public boolean isActive() {

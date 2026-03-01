@@ -1,5 +1,6 @@
 package org.moshang.fantasystructure.data;
 
+import lombok.Getter;
 import net.minecraft.core.BlockPos;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.level.Level;
@@ -12,7 +13,9 @@ import java.util.Collections;
 import java.util.Set;
 
 public class BlockInfo {
+    @Getter
     @NotNull private final BlockState expectedState;
+    @Getter
     private final Set<TagKey<Block>> allowedTags;
     private final byte propertyFlag;
 
@@ -47,7 +50,6 @@ public class BlockInfo {
 
     public boolean matches(Level level, BlockPos pos) {
         BlockState state = level.getBlockState(pos);
-
         if(state.equals(expectedState)) return true;
 
         if(!allowedTags.isEmpty()) {
@@ -96,14 +98,7 @@ public class BlockInfo {
         return block.defaultBlockState();
     }
 
-    public BlockState getExpectedState() {
-        return expectedState;
-    }
-    public Set<TagKey<Block>> getAllowedTags() {
-        return allowedTags;
-    }
-
     public boolean isAir() {
-        return expectedState == null || expectedState.isAir();
+        return expectedState.isAir();
     }
 }

@@ -15,9 +15,11 @@ import com.lowdragmc.lowdraglib.syncdata.field.ManagedFieldHolder;
 import com.mojang.logging.LogUtils;
 import lombok.Getter;
 import net.minecraft.MethodsReturnNonnullByDefault;
+import net.minecraft.Util;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -31,6 +33,8 @@ import org.moshang.fantasystructure.api.capability.recipe.RecipeCapability;
 import org.moshang.fantasystructure.api.recipe.FSRecipe;
 import org.moshang.fantasystructure.api.recipe.RecipeLogic;
 import org.moshang.fantasystructure.api.recipe.content.ContentModifier;
+import org.moshang.fantasystructure.data.StructureState;
+import org.moshang.fantasystructure.data.save.StructureWorldSavedData;
 import org.moshang.fantasystructure.helper.StructurePattern;
 import org.moshang.fantasystructure.helper.blueprint.BlueprintManager;
 import org.moshang.fantasystructure.helper.builder.StructureBuilderManager;
@@ -38,6 +42,7 @@ import org.slf4j.Logger;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 
 @ParametersAreNonnullByDefault
 @MethodsReturnNonnullByDefault
@@ -72,16 +77,13 @@ public abstract class BlockEntityControllerBase extends BlockEntity implements I
     protected boolean formed = false;
     @Getter
     private StructurePattern pattern;
+    private CompletableFuture<StructurePattern> patternFuture;
     @Getter @DescSynced
     private final ResourceLocation id;
-    private int ticks = 0;
-    @Persisted
-    private boolean needCheckBus = true;
+    private StructureState structureState;
 
     @Getter
     private final long offset = FantasyStructure.RND.nextLong();
-    @Getter
-    private final List<IBus> buses = new ArrayList<>();
     @Persisted
     private final RecipeLogic recipeLogic;
     private final Table<IO, RecipeCapability<?>, List<IRecipeHandler<?>>> recipeCapabilityProxies;
@@ -102,19 +104,56 @@ public abstract class BlockEntityControllerBase extends BlockEntity implements I
     public void onLoad() {
         super.onLoad();
         if (level != null && !level.isClientSide) {
-            initPattern();
-            checkStructure();
+            ServerLevel serverLevel = (ServerLevel) level;
+            var savedData = StructureWorldSavedData.getOrCreate(serverLevel);
+            this.structureState = savedData.getStructure(worldPosition);
+            if(this.structureState == null) {
+                initPattern();
+            } else {
+                pattern = structureState.getPattern();
+           }
         }
+    }
+
+    @Override
+    public void setRemoved() {
+        if(level instanceof ServerLevel serverLevel && structureState != null) {
+            var savedData = StructureWorldSavedData.getOrCreate(serverLevel);
+            savedData.removeStructure(worldPosition);
+        }
+        super.setRemoved();
     }
 
     public void serverTick() {
         if(level == null || level.isClientSide) return;
 
-        ticks++;
-        if(ticks % 40 == 0) {
-            checkStructure();
+        if(structureState != null) {
+            boolean wasFormed = this.formed;
+            boolean isValid = structureState.tickCheck(level);
+
+            if(wasFormed != isValid) {
+                setFormed(isValid);
+                if(isValid) {
+                    resetRecipeCapabilityProxies();
+                } else {
+                    recipeCapabilityProxies.clear();
+                }
+            }
+            if(isValid) {
+                serverTickInternal();
+            }
+        } else {
+            if(patternFuture != null && patternFuture.isDone()) {
+                try {
+                    pattern = patternFuture.get();
+                    createStructureState();
+                } catch (Exception e) {
+                    LOGGER.error("Error while getting pattern", e);
+                    patternFuture = null;
+                    initPattern();
+                }
+            }
         }
-        serverTickInternal();
     }
 
     private void serverTickInternal() {
@@ -128,31 +167,35 @@ public abstract class BlockEntityControllerBase extends BlockEntity implements I
     }
 
     protected void initPattern() {
+        if(patternFuture != null && !patternFuture.isDone()) return;
         if (pattern == null && getLevel() != null && !getLevel().isClientSide) {
-            this.pattern = BlueprintManager.getPattern(id, getBlockState().getValue(BlockStateProperties.HORIZONTAL_FACING));
+            var facing = getBlockState().getValue(BlockStateProperties.HORIZONTAL_FACING);
+            this.patternFuture = CompletableFuture.supplyAsync(
+                    Util.wrapThreadWithTaskName("init pattern", () -> BlueprintManager.getPattern(id, facing)),
+                            Util.backgroundExecutor())
+                    .exceptionally(throwable -> {
+                        LOGGER.error("Failed load pattern for {}: {}", id, throwable);
+                        return null;
+                    });
         }
     }
 
-    protected void checkStructure() {
-        if (pattern == null) initPattern();
-        if (pattern == null) return;
-
-        if(needCheckBus) {
-            var formed = pattern.matches(level, worldPosition, buses);
-            setFormed(pattern.matches(level, worldPosition, buses));
-            resetRecipeCapabilityProxies();
-            if(formed) {
-                this.needCheckBus = false;
-                recipeLogic.setStatus(true);
-            }
-        } else {
-            var lastFormed = formed;
-            var formed = pattern.matches(level, worldPosition);
-            setFormed(pattern.matches(level, worldPosition));
-            if(lastFormed && !formed) {
-                markBusDirty();
+    private void createStructureState() {
+        if (pattern != null && level instanceof ServerLevel serverLevel) {
+            structureState = new StructureState(worldPosition, pattern);
+            StructureWorldSavedData savedData = StructureWorldSavedData.getOrCreate(serverLevel);
+            savedData.registerStructure(structureState);
+            boolean isValid = structureState.tickCheck(level);
+            setFormed(isValid);
+            if (isValid) {
+                resetRecipeCapabilityProxies();
             }
         }
+    }
+
+    public void onRotate() {
+        initPattern();
+        setChanged();
     }
 
     public void autoBuild(ItemStack builderStack, boolean isCreative) {
@@ -160,11 +203,6 @@ public abstract class BlockEntityControllerBase extends BlockEntity implements I
         if(level != null && !level.isClientSide) {
             StructureBuilderManager.startBuild(level, worldPosition, this.pattern, builderStack, isCreative);
         }
-    }
-
-    public void markBusDirty() {
-        needCheckBus = true;
-        buses.clear();
     }
 
     @RPCMethod
@@ -217,7 +255,7 @@ public abstract class BlockEntityControllerBase extends BlockEntity implements I
 
     private void resetRecipeCapabilityProxies() {
         recipeCapabilityProxies.clear();
-        for(var bus : buses) {
+        for(var bus : structureState.getCollectedBuses()) {
             if(!recipeCapabilityProxies.contains(bus.getIo(), bus.getRecipeCapability())) {
                 recipeCapabilityProxies.put(bus.getIo(), bus.getRecipeCapability(), new ArrayList<>());
             }
