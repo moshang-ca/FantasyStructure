@@ -1,6 +1,5 @@
 package org.moshang.fantasystructure.network.data;
 
-import com.lowdragmc.lowdraglib.side.fluid.FluidStack;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
@@ -28,13 +27,9 @@ public record FilterTankWidgetClickPacket(BlockPos pos, int tank, @Nullable Flui
         ctx.get().enqueueWork(() -> {
             ServerPlayer player = ctx.get().getSender();
             if(player == null) return;
-            if(player.level().getBlockEntity(packet.pos) instanceof BEFluidBus be) {
-                if(packet.fluid != null) {
-                    be.setValidatorInTank(packet.tank, packet.fluid);
-                } else {
-                    be.setValidatorInTank(packet.tank, FluidStack.empty());
-                }
-                player.level().sendBlockUpdated(packet.pos, be.getBlockState(), be.getBlockState(), 3);
+            if(player.level().getBlockEntity(packet.pos()) instanceof BEFluidBus be) {
+                be.setValidatorInTank(packet.tank(), packet.fluid());
+                player.level().sendBlockUpdated(packet.pos(), be.getBlockState(), be.getBlockState(), 3);
                 be.setChanged();
             }
         });

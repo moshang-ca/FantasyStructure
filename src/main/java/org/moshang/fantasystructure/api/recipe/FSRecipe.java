@@ -82,7 +82,8 @@ public class FSRecipe implements Recipe<Container> {
         return copy(id);
     }
 
-    public FSRecipe copy(ContentModifier modifier, boolean modifyDuration) {
+    public FSRecipe copy(@Nullable ContentModifier modifier, boolean modifyDuration) {
+        if(modifier == null) return this;
         var copy = new FSRecipe(recipeType, id,
                 copyContents(inputs, modifier),
                 copyContents(outputs, modifier),
@@ -148,6 +149,7 @@ public class FSRecipe implements Recipe<Container> {
         return ActionResult.SUCCESS;
     }
 
+    @SuppressWarnings("ConstantValue")
     private ActionResult matchRecipe(boolean perTick, IO io, IRecipeCapabilityHolder holder, Map<RecipeCapability<?>, List<Content>> contents) {
         Table<IO, RecipeCapability<?>, List<IRecipeHandler<?>>> capabilityProxies = holder.getRecipeCapabilitiesProxy();
 
@@ -194,6 +196,7 @@ public class FSRecipe implements Recipe<Container> {
      * @param contents the content of inputs or outputs
      * @return whether the handler can handle the contents
     * */
+    @SuppressWarnings("ConstantValue")
     public boolean handleRecipe(boolean perTick, IO io, IRecipeCapabilityHolder holder, Map<RecipeCapability<?>, List<Content>> contents) {
         Table<IO, RecipeCapability<?>, List<IRecipeHandler<?>>> capabilityProxies = holder.getRecipeCapabilitiesProxy();
         for(var entry : contents.entrySet()) {

@@ -15,6 +15,8 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.material.Fluid;
+import net.minecraft.world.level.material.Fluids;
 import net.minecraftforge.client.extensions.common.IClientFluidTypeExtensions;
 import net.minecraftforge.fluids.FluidType;
 import org.moshang.fantasystructure.network.FSMessages;
@@ -92,7 +94,7 @@ public class FluidTankWidget extends AbstractWidget {
         FSMessages.sendToServer(new TankWidgetClickPacket(pos, tank, isFill));
     }
 
-    private void renderFluid(GuiGraphics guiGraphics, TextureAtlasSprite sprite,
+    protected void renderFluid(GuiGraphics guiGraphics, TextureAtlasSprite sprite,
                              int color, int x, int y, int width, int height) {
         float r = ((color) >> 16 & 0xFF) / 255.0F;
         float g = ((color) >> 8 & 0xFF) / 255.0F;
@@ -115,17 +117,28 @@ public class FluidTankWidget extends AbstractWidget {
         RenderSystem.setShaderColor(1, 1, 1, 1);
     }
 
-    private TextureAtlasSprite getFluidSprite(FluidStack fluidStack) {
-        FluidType fluid = fluidStack.getFluid().getFluidType();
-        ResourceLocation texture = IClientFluidTypeExtensions.of(fluid).getStillTexture();
-        return Minecraft.getInstance().getModelManager()
-                .getAtlas(InventoryMenu.BLOCK_ATLAS)
-                .getSprite(texture);
+    protected TextureAtlasSprite getFluidSprite(FluidStack fluidStack) {
+        return getFluidSprite(fluidStack.getFluid());
     }
 
-    private int getFluidColor(FluidStack fluidStack) {
-        FluidType fluid = fluidStack.getFluid().getFluidType();
-        return IClientFluidTypeExtensions.of(fluid).getTintColor();
+    protected TextureAtlasSprite getFluidSprite(Fluid fluid) {
+        if(fluid == Fluids.EMPTY) return null;
+        else {
+            FluidType fluidType = fluid.getFluidType();
+            ResourceLocation texture = IClientFluidTypeExtensions.of(fluidType).getStillTexture();
+            return Minecraft.getInstance().getModelManager()
+                    .getAtlas(InventoryMenu.BLOCK_ATLAS)
+                    .getSprite(texture);
+        }
+    }
+
+    protected int getFluidColor(FluidStack fluidStack) {
+        return getFluidColor(fluidStack.getFluid());
+    }
+
+    protected int getFluidColor(Fluid fluid) {
+        FluidType fluidType = fluid.getFluidType();
+        return IClientFluidTypeExtensions.of(fluidType).getTintColor();
     }
 
     public long getCapacity() {

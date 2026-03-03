@@ -65,7 +65,7 @@ public class FSBlocks {
             register("great_fluid_input_bus", () -> new BlockFluidBus(3, ComponentFluidCapacity.GREAT, IO.IN))
     ).toArray(RegistryObject[]::new);
     public static final RegistryObject<Block>[] FLUID_OUTPUT_BUSES = List.of(
-            register("tiny_fluid_output_bus", () -> new BlockFluidBus(3, ComponentFluidCapacity.TINY, IO.IN))
+            register("tiny_fluid_output_bus", () -> new BlockFluidBus(3, ComponentFluidCapacity.TINY, IO.OUT))
     ).toArray(RegistryObject[]::new);
 
     public static final RegistryObject<Block> CREATIVE_ENERGY_SOURCE = register("creative_energy_source", () -> new BlockCreativeEnergySource(3));

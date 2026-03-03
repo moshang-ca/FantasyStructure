@@ -10,7 +10,6 @@ import net.minecraftforge.common.data.ExistingFileHelper;
 import net.minecraftforge.registries.ForgeRegistries;
 import org.moshang.fantasystructure.FantasyStructure;
 import org.moshang.fantasystructure.block.container.BlockItemBus;
-import org.moshang.fantasystructure.registry.FSBlocks;
 
 public class FSBlockStateProvider extends BlockStateProvider {
     private static final int DEFAULT_ANGLE_OFFSET = 180;
@@ -21,17 +20,17 @@ public class FSBlockStateProvider extends BlockStateProvider {
 
     @Override
     protected void registerStatesAndModels() {
-        for(var block : FSBlocks.ITEM_INPUT_BUSES) {
-            ModelFile model = models().orientable(
-                    name(block.get()),
-                    modLoc("block/bus_side"),
-                    modLoc("block/" + name(block.get()) + "_front"),
-                    modLoc("block/bus_side")
-            );
-
-            horizontalBlock(block.get(), model, DEFAULT_ANGLE_OFFSET);
-            simpleBlockItem(block.get(), model);
-        }
+//        for(var block : FSBlocks.ITEM_INPUT_BUSES) {
+//            ModelFile model = models().orientable(
+//                    name(block.get()),
+//                    modLoc("block/bus_side"),
+//                    modLoc("block/" + name(block.get()) + "_front"),
+//                    modLoc("block/bus_side")
+//            );
+//
+//            horizontalBlock(block.get(), model, DEFAULT_ANGLE_OFFSET);
+//            simpleBlockItem(block.get(), model);
+//        }
     }
 
     private String name(Block block) {

@@ -1,0 +1,20 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "fantasystructure:block/tiny_item_input_bus",
+      "y": 0
+    },
+    "facing=east": {
+      "model": "fantasystructure:block/tiny_item_input_bus",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "fantasystructure:block/tiny_item_input_bus",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "fantasystructure:block/tiny_item_input_bus",
+      "y": 270
+    }
+  }
+}

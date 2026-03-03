@@ -46,10 +46,10 @@ public class FluidBusScreen extends AbstractContainerScreen<FluidBusMenu> {
             addRenderableWidget(tankWidget);
         }
 
-        for(int i = 0; i < menu.getFilterHandler().getTanks(); ++i) {
+        for(int i = 0; i < menu.getFluidHandler().getTanks(); ++i) {
             var filterWidget = new FilterFluidTankWidget(
                     1 + FIRST_FLUID_BAR_X + 22 * i, FIRST_FLUID_BAR_Y - 22,
-                    16, 16, null, menu::getFilterHandler, i, menu.getPos(), this);
+                    16, 16, null, menu::getFluidHandler, i, menu.getPos(), this);
             this.filterWidgets.add(filterWidget);
             addRenderableWidget(filterWidget);
         }
@@ -71,7 +71,7 @@ public class FluidBusScreen extends AbstractContainerScreen<FluidBusMenu> {
     protected void renderBg(GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {
         guiGraphics.blit(GUI, leftPos, topPos, 0, 0, imageWidth, imageHeight);
         // Filter slot background
-        for(int i = 0; i < menu.getFilterHandler().getTanks(); ++i) {
+        for(int i = 0; i < menu.getFluidHandler().getTanks(); ++i) {
             guiGraphics.blit(GUI, leftPos + FIRST_FLUID_BAR_X + 22 * i, topPos + FIRST_FLUID_BAR_Y - 23,
                     BAR_X + 18, 0, 18, 18);
         }
@@ -88,6 +88,6 @@ public class FluidBusScreen extends AbstractContainerScreen<FluidBusMenu> {
                         pX, pY));
 
         filterWidgets.stream().filter(widget -> widget.isMouseOver(pX, pY)).findFirst()
-                .ifPresent(widget -> pGuiGraphics.renderTooltip(font, menu.getFilterHandler().getFluidInTank(widget.getTank()).getDisplayName(), pX, pY));
+                .ifPresent(widget -> pGuiGraphics.renderTooltip(font, widget.getFluidDisplayName(), pX, pY));
     }
 }

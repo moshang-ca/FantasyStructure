@@ -87,7 +87,6 @@ public class StructureWorldSavedData extends SavedData {
     public void onBlockChanged(BlockPos changedPos) {
         List<StructureState> affected = getStructureAt(changedPos);
         for(var state : affected) {
-            System.out.printf(state.toString());
             state.onBlockChanged(changedPos);
         }
     }

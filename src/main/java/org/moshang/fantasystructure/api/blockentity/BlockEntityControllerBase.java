@@ -209,6 +209,7 @@ public abstract class BlockEntityControllerBase extends BlockEntity implements I
     private void setFormed(boolean formed) {
         if(this.formed == formed) return;
         this.formed = formed;
+        recipeLogic.setStatus(formed);
         setChanged();
 
         if(level != null && !level.isClientSide) {
@@ -218,13 +219,12 @@ public abstract class BlockEntityControllerBase extends BlockEntity implements I
 
     @Override
     public @Nullable FSRecipe getModifyRecipe(FSRecipe recipe) {
-        //noinspection ConstantValue
-        if(getMaxParallel(recipe) == null) return recipe; // This is necessary, as getMaxParallel() will be changed to return null.
         recipe = recipe.copy(getMaxParallel(recipe), false);
         return recipe;
     }
 
     @Override
+    @Nullable
     public ContentModifier getMaxParallel(FSRecipe recipe) {
         return new ContentModifier(5, 0);
     }
@@ -261,6 +261,7 @@ public abstract class BlockEntityControllerBase extends BlockEntity implements I
             }
             //noinspection DataFlowIssue
             recipeCapabilityProxies.get(bus.getIo(), bus.getRecipeCapability()).add(bus.getRecipeHandler());
+            System.out.println("handler " + bus.getRecipeHandler());
         }
     }
 }

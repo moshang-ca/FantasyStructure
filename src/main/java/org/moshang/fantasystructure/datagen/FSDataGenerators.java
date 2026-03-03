@@ -8,6 +8,7 @@ import org.moshang.fantasystructure.datagen.loots.FSLootTableProvider;
 import org.moshang.fantasystructure.datagen.models.FSBlockStateProvider;
 import org.moshang.fantasystructure.datagen.recipes.FSRecipeProvider;
 import org.moshang.fantasystructure.datagen.tags.FSBlockTagProvider;
+import org.moshang.fantasystructure.datagen.tags.FSFluidTagProvider;
 
 @Mod.EventBusSubscriber(modid = FantasyStructure.MODID, bus = Mod.EventBusSubscriber.Bus.MOD)
 public class FSDataGenerators {
@@ -19,6 +20,7 @@ public class FSDataGenerators {
         var existingFileHelper = event.getExistingFileHelper();
 
         pack.addProvider(packOutput -> new FSBlockTagProvider(packOutput, lookupProvider, existingFileHelper));
+        pack.addProvider(packOutput -> new FSFluidTagProvider(packOutput, lookupProvider, existingFileHelper));
         pack.addProvider(FSLootTableProvider::new);
         pack.addProvider(packOutput -> new FSBlockStateProvider(packOutput, existingFileHelper));
         pack.addProvider(FSRecipeProvider::new);

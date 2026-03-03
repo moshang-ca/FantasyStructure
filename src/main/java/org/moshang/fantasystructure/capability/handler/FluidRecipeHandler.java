@@ -27,9 +27,9 @@ public class FluidRecipeHandler extends RecipeHandler<FluidIngredient> {
         List<FluidIngredient> remaining = new ArrayList<>(left);
 
         if(io == IO.IN) {
-            return handleInput(handler, left, slotName);
+            return handleInput(handler, remaining, slotName);
         } else {
-            return handleOutput(handler, left, slotName, simulate);
+            return handleOutput(handler, remaining, slotName, simulate);
         }
     }
 
@@ -74,10 +74,11 @@ public class FluidRecipeHandler extends RecipeHandler<FluidIngredient> {
                 if(!output.isEmpty()) {
                     for(int i = 0; i < fluidHandler.getTanks(); i++) {
                         long filled = fluidHandler.fill(i, output, false, true);
-                        output.setAmount(filled);
+                        output.setAmount(output.getAmount() - filled);
                         if(output.isEmpty()) break;
                     }
                 }
+                if(output.isEmpty()) iter.remove();
             } else {
                 var shuffled = Arrays.asList(Arrays.copyOf(fluids, fluids.length));
                 assert getMachine() != null;

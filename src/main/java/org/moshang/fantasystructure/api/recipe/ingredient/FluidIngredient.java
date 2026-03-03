@@ -218,6 +218,7 @@ public class FluidIngredient implements Predicate<FluidStack> {
         @Override
         public JsonObject serialize() {
             JsonObject jsonObject = new JsonObject();
+            System.out.println("fluid: " + ForgeRegistries.FLUIDS.getKey(fluid));
             jsonObject.addProperty("fluid", ForgeRegistries.FLUIDS.getKey(fluid).toString());
             return jsonObject;
         }
@@ -250,12 +251,14 @@ public class FluidIngredient implements Predicate<FluidStack> {
 
         @Override
         public JsonObject serialize() {
-            return null;
+            JsonObject jsonObject = new JsonObject();
+            jsonObject.addProperty("tag", tag.location().toString());
+            return jsonObject;
         }
 
         @Override
         public Value copy() {
-            return null;
+            return new TagValue(this.tag);
         }
     }
 }

@@ -1,6 +1,7 @@
 package org.moshang.fantasystructure.api.recipe;
 
 import com.google.gson.JsonObject;
+import com.lowdragmc.lowdraglib.gui.editor.annotation.NumberRange;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 import net.minecraft.MethodsReturnNonnullByDefault;
@@ -49,7 +50,7 @@ public class FSRecipeBuilder {
     private boolean perTick;
     @Setter
     private String slotName;
-    @Setter
+    @Setter @NumberRange(range = {0.f, 1.f})
     private float chance = 1.f;
     @Setter @Nullable
     private BiConsumer<FSRecipeBuilder, Consumer<FinishedRecipe>> onSave;
@@ -182,6 +183,7 @@ public class FSRecipeBuilder {
     public FSRecipeBuilder inputFluids(FluidStack... inputs) {
         return input(FluidRecipeCapability.INSTANCE, Arrays.stream(inputs).map(fluid -> {
             ResourceLocation fluidID = ForgeRegistries.FLUIDS.getKey(fluid.getFluid());
+            System.out.println("fluidID: " + fluidID);
             assert fluidID != null;
             return FluidIngredient.of(TagKey.create(ForgeRegistries.FLUIDS.getRegistryKey(), new ResourceLocation("forge", fluidID.getPath())), fluid.getAmount());
         }).toArray(FluidIngredient[]::new));

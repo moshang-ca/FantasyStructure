@@ -6,6 +6,7 @@ import com.lowdragmc.lowdraglib.side.fluid.forge.FluidTransferHelperImpl;
 import com.lowdragmc.lowdraglib.syncdata.IManagedStorage;
 import com.lowdragmc.lowdraglib.syncdata.annotation.DescSynced;
 import com.lowdragmc.lowdraglib.syncdata.annotation.Persisted;
+import com.lowdragmc.lowdraglib.syncdata.blockentity.IRPCBlockEntity;
 import com.lowdragmc.lowdraglib.syncdata.field.FieldManagedStorage;
 import com.lowdragmc.lowdraglib.syncdata.field.ManagedFieldHolder;
 import com.mojang.logging.LogUtils;
@@ -42,7 +43,7 @@ import org.slf4j.Logger;
 
 import java.util.function.Predicate;
 
-public class BEFluidBus extends BlockEntity implements IBus {
+public class BEFluidBus extends BlockEntity implements IBus, IRPCBlockEntity {
     public static final ManagedFieldHolder MANAGED_FIELD_HOLDER = new ManagedFieldHolder(BEFluidBus.class);
     private final FieldManagedStorage syncStorage = new FieldManagedStorage(this);
 
@@ -70,11 +71,6 @@ public class BEFluidBus extends BlockEntity implements IBus {
     private final ExtendedFluidTank fluidTank;
     private final LazyOptional<IFluidHandler> handler;
 
-    // TODO: merge fluidTank and filterHandler, reduce the size of the nbt in single block
-    @Getter @Persisted @DescSynced
-    private final ExtendedFluidTank filterHandler;
-    // Not be exposed to outer mod, so unnecessarily declare a lazyOptional.
-
     @Getter
     private final IRecipeHandler<FluidIngredient> recipeHandler;
     @Getter
@@ -89,7 +85,6 @@ public class BEFluidBus extends BlockEntity implements IBus {
         var type = state.getValue(BlockFluidBus.TYPE);
         this.fluidTank = createHandler(type.getTanks(), type.getMaxCapacity());
         this.handler = LazyOptional.of(() -> FluidTransferHelperImpl.toFluidHandler(fluidTank));
-        this.filterHandler = createHandler(type.getTanks(), 1);
 
         // For Recipe
         this.io = state.getValue(BlockFluidBus.IO_TYPE);
@@ -157,8 +152,7 @@ public class BEFluidBus extends BlockEntity implements IBus {
     }
 
     public void setValidatorInTank(int tank, Fluid fluid) {
-        this.filterHandler.setFluidInTank(tank, FluidStack.create(fluid, 1));
-        if(fluid != Fluids.EMPTY) {
+        if (fluid != Fluids.EMPTY) {
             fluidTank.setFilter(tank, fluid);
         } else {
             fluidTank.clearFilter(tank);

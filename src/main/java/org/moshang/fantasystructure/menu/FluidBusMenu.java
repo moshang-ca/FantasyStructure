@@ -18,18 +18,18 @@ import org.moshang.fantasystructure.registry.FSMenuType;
 public class FluidBusMenu extends BaseMenu {
     @Getter
     private final IFluidTransfer fluidHandler;
-    @Getter
-    private final IFluidTransfer filterHandler;
+//    @Getter
+//    private final IFluidTransfer filterHandler;
 
     public FluidBusMenu(@Nullable MenuType<?> pMenuType, int pContainerId, Inventory playerInv, BlockPos pos) {
         super(pMenuType, pContainerId, pos);
         BlockEntity be = playerInv.player.level().getBlockEntity(pos);
         if(be instanceof BEFluidBus bus) {
             this.fluidHandler = bus.getFluidTank();
-            this.filterHandler = bus.getFilterHandler();
+            // this.filterHandler = bus.getFilterHandler();
         } else {
             this.fluidHandler = ExtendedFluidTank.create(1, 0);
-            this.filterHandler = ExtendedFluidTank.create(1, 0);
+            // this.filterHandler = ExtendedFluidTank.create(1, 0);
             throw new IllegalStateException("Wrong BlockEntity");
         }
 

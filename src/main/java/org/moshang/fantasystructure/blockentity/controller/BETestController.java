@@ -29,10 +29,6 @@ public class BETestController extends BlockEntityControllerBase {
         super(entityType, pos, state, id);
     }
 
-    public void getPatternInfo() {
-        getPattern().blockPattern().forEach((pos, info) -> System.out.printf("pos %s is %s%n", pos, info.getExpectedState()));
-    }
-
     @Override
     public FSRecipeType getRecipeType() {
         return FSRecipes.RECIPE_TYPES.get("stellar_simulacrum");

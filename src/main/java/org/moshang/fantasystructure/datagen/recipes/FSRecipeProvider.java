@@ -1,12 +1,12 @@
 package org.moshang.fantasystructure.datagen.recipes;
 
+import com.lowdragmc.lowdraglib.side.fluid.FluidStack;
 import net.minecraft.data.PackOutput;
 import net.minecraft.data.recipes.FinishedRecipe;
 import net.minecraft.data.recipes.RecipeProvider;
-import net.minecraft.world.item.Items;
+import net.minecraft.world.level.material.Fluids;
 import org.moshang.fantasystructure.FantasyStructure;
 import org.moshang.fantasystructure.api.recipe.FSRecipeBuilder;
-import org.moshang.fantasystructure.capability.recipe.EnergyRecipeCapability;
 import org.moshang.fantasystructure.registry.recipe.FSRecipes;
 
 import java.util.function.Consumer;
@@ -19,8 +19,8 @@ public class FSRecipeProvider extends RecipeProvider {
     @Override
     protected void buildRecipes(Consumer<FinishedRecipe> finishedRecipe) {
         FSRecipeBuilder.of(FantasyStructure.id("coal_energy"), FSRecipes.RECIPE_TYPES.get("stellar_simulacrum"))
-                .inputItems(Items.COAL)
-                .perTick(true).output(EnergyRecipeCapability.INSTANCE, 100)
+                .inputFluids(FluidStack.create(Fluids.WATER, 1000))
+                .outputFluids(FluidStack.create(Fluids.LAVA, 1000))
                 .duration(200)
                 .save(finishedRecipe);
     }
