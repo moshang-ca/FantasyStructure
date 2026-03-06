@@ -210,7 +210,7 @@ public class Blueprint {
     }
 
     public StructurePattern toStructurePattern(Direction currentDir) {
-        return StructurePattern.createRotated(getPattern(), controllerOffset, originalDir, currentDir);
+        return StructurePattern.createRotated(getPattern(), controllerOffset, originalDir, currentDir, sizeZ);
     }
 
     // Use long2Object map.

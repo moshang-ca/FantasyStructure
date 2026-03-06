@@ -21,6 +21,7 @@ import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraftforge.network.NetworkHooks;
 import org.moshang.fantasystructure.api.blockentity.BlockEntityControllerBase;
+import org.moshang.fantasystructure.client.render.StructurePreviewRenderer;
 import org.moshang.fantasystructure.menu.ControllerMenu;
 import org.moshang.fantasystructure.menu.menuprovider.BlockMenuProvider;
 
@@ -105,6 +106,10 @@ public abstract class BlockControllerBase <T extends BlockEntityControllerBase> 
                 NetworkHooks.openScreen(serverPlayer, new BlockMenuProvider(controller, ControllerMenu.class), buf -> buf.writeBlockPos(pos));
 
                 return InteractionResult.CONSUME;
+            }
+        } else if(level.isClientSide) {
+            if(level.getBlockEntity(pos) instanceof BlockEntityControllerBase controller) {
+                StructurePreviewRenderer.showPreview(pos, controller, 200);
             }
         }
         return InteractionResult.sidedSuccess(level.isClientSide);

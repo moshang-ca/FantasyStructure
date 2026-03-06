@@ -1,5 +1,6 @@
 package org.moshang.fantasystructure.block.controller;
 
+import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
@@ -14,7 +15,11 @@ import org.moshang.fantasystructure.api.block.BlockControllerBase;
 import org.moshang.fantasystructure.blockentity.controller.BETestController;
 import org.moshang.fantasystructure.registry.FSBlockEntities;
 
+import javax.annotation.ParametersAreNonnullByDefault;
+
 @SuppressWarnings("removal")
+@ParametersAreNonnullByDefault
+@MethodsReturnNonnullByDefault
 public class BlockTestController extends BlockControllerBase<BETestController> implements EntityBlock {
     public BlockTestController(int strength) {
         super(

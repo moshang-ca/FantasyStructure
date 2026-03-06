@@ -10,18 +10,24 @@ import net.minecraft.world.level.block.state.BlockState;
 import org.moshang.fantasystructure.data.BlockInfo;
 import org.slf4j.Logger;
 
-public record StructurePattern(Long2ObjectOpenHashMap<BlockInfo> blockPattern, BlockPos controllerPos) {
+/**
+ * Save structure pattern, using relative position.
+ * @param blockPattern pattern from blueprint
+ * @param controllerPos
+ * @param height
+ */
+public record StructurePattern(Long2ObjectOpenHashMap<BlockInfo> blockPattern, BlockPos controllerPos, int height) {
     private static final Logger LOGGER = LogUtils.getLogger();
 
     public static StructurePattern createRotated(Long2ObjectOpenHashMap<BlockInfo> pattern, BlockPos controllerPos,
-                                                 Direction origin, Direction current) {
+                                                 Direction origin, Direction current, int height) {
         if(origin == current) {
-            return new StructurePattern(pattern, controllerPos);
+            return new StructurePattern(pattern, controllerPos, height);
         }
 
         Rotation rotation = getRelativeRotation(getRelativeAngle(origin, current));
         if(rotation == Rotation.NONE) {
-            return new StructurePattern(pattern, controllerPos);
+            return new StructurePattern(pattern, controllerPos, height);
         }
 
         Long2ObjectOpenHashMap<BlockInfo> rotatedMap = new Long2ObjectOpenHashMap<>();
@@ -33,21 +39,18 @@ public record StructurePattern(Long2ObjectOpenHashMap<BlockInfo> blockPattern, B
             );
         }
 
-        return new StructurePattern(rotatedMap, BlockPos.of(rotatePos(controllerPos, rotation)));
+        return new StructurePattern(rotatedMap, BlockPos.of(rotatePos(controllerPos, rotation)), height);
     }
 
     public boolean matches(Level level, BlockPos controllerPos, BlockPos checkPos) {
         var relativePos = checkPos.subtract(controllerPos);
         var info = blockPattern.get(relativePos.asLong());
         if(info == null) {
-            LOGGER.error("info is null, check pos is {}, relative pos is {}, controller pos is {}", checkPos, relativePos, controllerPos);
+            // LOGGER.error("info is null, check pos is {}, relative pos is {}, controller pos is {}", checkPos, relativePos, controllerPos);
             return false;
         }
-        if(!info.matches(level, checkPos)) {
-            LOGGER.warn("Issue at：{}， expected: {}, now: {}", checkPos, info.getExpectedState(), level.getBlockState(checkPos));
-            return false;
-        }
-        return true;
+        // LOGGER.warn("Issue at：{}， expected: {}, now: {}", checkPos, info.getExpectedState(), level.getBlockState(checkPos));
+        return info.matches(level, checkPos);
     }
 
     private static int getRelativeAngle(Direction from, Direction to) {
@@ -74,6 +77,7 @@ public record StructurePattern(Long2ObjectOpenHashMap<BlockInfo> blockPattern, B
         };
     }
 
+    @SuppressWarnings("deprecation")
     private static BlockInfo rotateBlockInfo(BlockInfo from, Rotation rotation) {
         if(rotation == Rotation.NONE) {
             return from;

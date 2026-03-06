@@ -75,7 +75,6 @@ public abstract class BlockEntityControllerBase extends BlockEntity implements I
 
     @Getter @Persisted @DescSynced
     protected boolean formed = false;
-    @Getter
     private StructurePattern pattern;
     private CompletableFuture<StructurePattern> patternFuture;
     @Getter @DescSynced
@@ -262,6 +261,14 @@ public abstract class BlockEntityControllerBase extends BlockEntity implements I
             //noinspection DataFlowIssue
             recipeCapabilityProxies.get(bus.getIo(), bus.getRecipeCapability()).add(bus.getRecipeHandler());
             System.out.println("handler " + bus.getRecipeHandler());
+        }
+    }
+
+    public StructurePattern getPattern() {
+        if(level.isClientSide) {
+            return BlueprintManager.getPattern(id, getFrontFacing().orElse(Direction.NORTH));
+        } else {
+            return pattern;
         }
     }
 }
