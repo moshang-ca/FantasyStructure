@@ -6,15 +6,22 @@ import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import lombok.Getter;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.material.Fluid;
+import net.minecraft.world.level.material.Fluids;
+import net.minecraftforge.common.capabilities.ForgeCapabilities;
+import net.minecraftforge.common.util.LazyOptional;
+import net.minecraftforge.fluids.capability.IFluidHandlerItem;
 import net.minecraftforge.registries.ForgeRegistries;
 import org.moshang.fantasystructure.Config;
 import org.moshang.fantasystructure.data.BlockInfo;
+import org.moshang.fantasystructure.data.save.StructureWorldSavedData;
 import org.moshang.fantasystructure.helper.StructurePattern;
 import org.moshang.fantasystructure.item.ItemAutoBuilder;
 import org.slf4j.Logger;
@@ -79,19 +86,32 @@ public class StructureBuilder {
             BlockState state = level.getBlockState(worldPos);
             if(!state.isAir()) {
                 if(!state.equals(targetState)) {
-                    failedBlock.put(entry.getLongKey(), entry.getValue());
-                    placed++;
+                    for(var tagKey : blockTagKeys) {
+                        if(!state.is(tagKey)) {
+                            failedBlock.put(entry.getLongKey(), entry.getValue());
+                            placed++;
+                        }
+                    }
                 }
                 continue;
             }
 
             if(!isCreative) {
-                ResourceLocation blockId = ForgeRegistries.BLOCKS.getKey(targetState.getBlock());
-                ItemStack materialStack = ItemAutoBuilder.shrinkMaterials(level, builderStack, blockTagKeys, blockId);
-                if(materialStack != null && materialStack.getItem() instanceof BlockItem blockItem) {
-                    BlockState materialState = blockInfo.createTagBlockState(blockItem.getBlock());
-                    if (!level.setBlock(worldPos, materialState, 2)) {
-                        failedBlock.put(entry.getLongKey(), entry.getValue());
+                var fluidState = targetState.getFluidState();
+                if(fluidState.isEmpty()) {
+                    ItemStack materialStack = ItemAutoBuilder.shrinkMaterials(level, builderStack, blockTagKeys, targetState);
+                    if (materialStack != null && materialStack.getItem() instanceof BlockItem blockItem) {
+                        BlockState materialState = blockInfo.createTagBlockState(blockItem.getBlock());
+                        if (!level.setBlock(worldPos, materialState, 2)) {
+                            failedBlock.put(entry.getLongKey(), entry.getValue());
+                        }
+                    }
+                } else {
+                    Fluid fluid = ItemAutoBuilder.shrinkMaterials(level, builderStack, fluidState);
+                    if(!fluid.isSame(Fluids.EMPTY)) {
+                        if(!level.setBlock(worldPos, fluid.defaultFluidState().createLegacyBlock(), 2)) {
+                            failedBlock.put(entry.getLongKey(), entry.getValue());
+                        }
                     }
                 }
             } else {

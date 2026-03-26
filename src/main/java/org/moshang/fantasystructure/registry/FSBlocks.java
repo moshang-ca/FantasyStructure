@@ -85,6 +85,7 @@ public class FSBlocks {
         AllBlocks.add(toReturn);
         return toReturn;
     }
+
     public static List<RegistryObject<?>> getBlocks() {
         return Collections.unmodifiableList(AllBlocks);
     }

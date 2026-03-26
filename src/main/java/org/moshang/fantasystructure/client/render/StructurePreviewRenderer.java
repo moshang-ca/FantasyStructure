@@ -206,7 +206,7 @@ public class StructurePreviewRenderer {
         for(BlockPos pos : renderedBlocks) {
             if(Thread.interrupted()) return;
             BlockState blockState = level.getBlockState(pos);
-            FluidState fluidState = level.getFluidState(pos);
+            FluidState fluidState = blockState.getFluidState();
             Block block = blockState.getBlock();
             if(block == Blocks.AIR) continue;
 
@@ -289,6 +289,7 @@ public class StructurePreviewRenderer {
         layer.clearRenderState();
     }
 
+    // render structure preview in world
     @SuppressWarnings("DataFlowIssue")
     public static void renderPreview(PoseStack poseStack, Camera camera, float partialTicks) {
         if(LEVEL == null || CACHE_STATE.get() != CacheState.COMPILED) return;

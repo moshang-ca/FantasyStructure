@@ -10,51 +10,19 @@ import net.minecraft.world.inventory.*;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.moshang.fantasystructure.api.blockentity.BlockEntityControllerBase;
 import org.moshang.fantasystructure.registry.FSMenuType;
 
 @SuppressWarnings("removal")
 public class ControllerMenu extends BaseMenu {
-//    @Deprecated
-//    private  ControllerContainerData data;
     @Getter
     private final ResourceLocation structureID;
     private final Level level;
     private final BlockPos pos;
     private final ContainerData data;
 
-//    public ControllerMenu(int pContainerId, Inventory playerInv, FriendlyByteBuf buf) {
-//        this(FSMenuType.CONTROLLER_MENU_TYPE.get(),
-//                pContainerId,
-//                playerInv,
-//                buf.readBlockPos(),
-//                new ControllerContainerData(buf.readBoolean(), buf.readResourceLocation()));
-//    }
-
-//    private ControllerMenu(@Nullable MenuType<?> pMenuType, int pContainerId, Inventory playerInv,
-//                           BlockPos pos, boolean isFormed, ResourceLocation id) {
-//        this(pMenuType, pContainerId, playerInv, pos, new ControllerContainerData(isFormed, id));
-//    }
-//
-//    private ControllerMenu(@Nullable MenuType<?> pMenuType, int pContainerId, Inventory playerInv, BlockPos pos,
-//                          ControllerContainerData data) {
-//        super(pMenuType, pContainerId, pos);
-//        this.data = data;
-//
-//        if(playerInv.player.level().getBlockEntity(pos) instanceof BlockEntityControllerBase be) {
-//            this.formed = be.isFormed();
-//            this.structureID = be.getId();
-//        } else {
-//            this.formed = data.isFormed();
-//            this.structureID = data.getId();
-//        }
-//
-//        addPlayerInventory(playerInv, 8, 155);
-//        addDataSlots(data);
-//    }
-
-    // New trait from ldlib.
     // For Server
     private ControllerMenu(@Nullable MenuType<?> pMenuType, int pContainerId, Inventory playerInv, BlockPos pos) {
         super(pMenuType, pContainerId, pos);
@@ -79,8 +47,9 @@ public class ControllerMenu extends BaseMenu {
                 pContainerId, playerInv, buf.readBlockPos());
     }
 
+    @NotNull
     @Override
-    public ItemStack quickMoveStack(Player player, int i) {
+    public ItemStack quickMoveStack(@NotNull Player player, int i) {
         ItemStack itemStack = ItemStack.EMPTY;
         Slot slot = this.slots.get(i);
 

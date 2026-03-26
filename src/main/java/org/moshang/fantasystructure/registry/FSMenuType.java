@@ -18,6 +18,8 @@ public class FSMenuType {
     public static final RegistryObject<MenuType<EnergyBusMenu>> ENERGY_BUS_MENU_TYPE = MENU_TYPES.register("energy_bus_menu", () -> IForgeMenuType.create(EnergyBusMenu::new));
     public static final RegistryObject<MenuType<FluidBusMenu>> FLUID_BUS_MENU_TYPE = MENU_TYPES.register("fluid_bus_menu", () -> IForgeMenuType.create(FluidBusMenu::new));
 
+    private FSMenuType() {}
+
     public static void registerMenuFactories() {
         BaseMenu.register(ControllerMenu.class, ControllerMenu::createForServer);
         BaseMenu.register(ItemBusMenu.class, ItemBusMenu::createForServer);

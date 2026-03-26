@@ -13,6 +13,7 @@ import org.moshang.fantasystructure.FantasyStructure;
 
 import javax.annotation.Nullable;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Set;
 
 public abstract class FSRecipeRegistry<K, V> implements Iterable<V> {
@@ -52,6 +53,10 @@ public abstract class FSRecipeRegistry<K, V> implements Iterable<V> {
     public void unfreeze() {
         frozen = false;
     }
+    
+    public Set<Map.Entry<K,V>> entrySet() {
+        return registry.entrySet();
+    }
 
     public Set<V> values() {
         return registry.values();
@@ -84,11 +89,6 @@ public abstract class FSRecipeRegistry<K, V> implements Iterable<V> {
         return registry.inverse().getOrDefault(key, defaultKey);
     }
 
-    public abstract void writeBuf(V value, FriendlyByteBuf buf);
-    @Nullable public abstract V readBuf(FriendlyByteBuf buf);
-    public abstract Tag saveToNBT(V value);
-    @Nullable public abstract V loadFromNBT(Tag tag);
-
     public boolean remove(K name) {
         return registry.remove(name) != null;
     }
@@ -97,37 +97,6 @@ public abstract class FSRecipeRegistry<K, V> implements Iterable<V> {
         public String(ResourceLocation registryName) {
             super(registryName);
         }
-
-        @Override
-        public void writeBuf(V value, FriendlyByteBuf buf) {
-            buf.writeBoolean(containValue(value));
-            if(containValue(value)) {
-                buf.writeUtf(getKey(value));
-            }
-        }
-
-        @Nullable
-        @Override
-        public V readBuf(FriendlyByteBuf buf) {
-            if(buf.readBoolean()) {
-                return get(buf.readUtf());
-            }
-            return null;
-        }
-
-        @Override
-        public Tag saveToNBT(V value) {
-            if(containValue(value)) {
-                return StringTag.valueOf(getKey(value));
-            }
-            return new CompoundTag();
-        }
-
-        @Nullable
-        @Override
-        public V loadFromNBT(Tag tag) {
-            return get(tag.getAsString());
-        }
     }
 
     public static class RL<V> extends FSRecipeRegistry<ResourceLocation, V> {
@@ -135,41 +104,8 @@ public abstract class FSRecipeRegistry<K, V> implements Iterable<V> {
             super(registryName);
         }
 
-        @Override
-        public void writeBuf(V value, FriendlyByteBuf buf) {
-            buf.writeBoolean(containValue(value));
-            if(containValue(value)) {
-                buf.writeUtf(getKey(value).toString());
-            }
-        }
-
         public V get(java.lang.String id) {
             return this.registry.get(FantasyStructure.id(id));
-        }
-
-        @Nullable
-        @Override
-        @SuppressWarnings("removal")
-        public V readBuf(FriendlyByteBuf buf) {
-            if(buf.readBoolean()) {
-                return get(new ResourceLocation(buf.readUtf()));
-            }
-            return null;
-        }
-
-        @Override
-        public Tag saveToNBT(V value) {
-            if(containValue(value)) {
-                return StringTag.valueOf(getKey(value).toString());
-            }
-            return new CompoundTag();
-        }
-
-        @Nullable
-        @Override
-        @SuppressWarnings("removal")
-        public V loadFromNBT(Tag tag) {
-            return get(new ResourceLocation(tag.getAsString()));
         }
     }
 }

@@ -31,11 +31,7 @@ public class BlockTestController extends BlockControllerBase<BETestController> i
 
     @Override
     protected BETestController createBlockEntity(BlockPos pos, BlockState state) {
-        return new BETestController(
-                getBlockEntityTypeSupplier().get(),
-                pos, state,
-                getPatternIdSupplier().get()
-        );
+        return new BETestController(getBlockEntityTypeSupplier().get(), pos, state, getPatternIdSupplier().get());
     }
 
     @Nullable

@@ -45,7 +45,6 @@ public class BlueprintManager {
         try {
             Files.createDirectories(blueprintDir);
 
-
             List<Path> files = new ArrayList<>();
             try(DirectoryStream<Path> stream = Files.newDirectoryStream(blueprintDir, "*.fspb")) {
                 stream.forEach(files::add);
@@ -79,7 +78,7 @@ public class BlueprintManager {
         }
     }
 
-    private static boolean containsBlueprintFiles(Path dir) throws IOException {
+    private static boolean contain(Path dir) throws IOException {
         if (!Files.exists(dir) || !Files.isDirectory(dir)) {
             return false;
         }
@@ -111,6 +110,10 @@ public class BlueprintManager {
 
     public static StructurePattern getPattern(ResourceLocation id, Direction facing) {
         return get(id).map(blueprint -> blueprint.toStructurePattern(facing)).orElse(null);
+    }
+
+    public static StructurePattern getPattern(ResourceLocation id) {
+        return getPattern(id, Direction.NORTH);
     }
 
     public static Map<ResourceLocation, Integer> getMaterial(ResourceLocation id) {

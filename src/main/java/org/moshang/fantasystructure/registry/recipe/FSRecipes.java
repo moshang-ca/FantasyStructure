@@ -1,5 +1,7 @@
 package org.moshang.fantasystructure.registry.recipe;
 
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.Tuple;
 import net.minecraftforge.registries.ForgeRegistries;
 import org.moshang.fantasystructure.FantasyStructure;
 import org.moshang.fantasystructure.api.capability.recipe.RecipeCapability;
@@ -9,7 +11,9 @@ import org.moshang.fantasystructure.capability.recipe.EnergyRecipeCapability;
 import org.moshang.fantasystructure.capability.recipe.FluidRecipeCapability;
 import org.moshang.fantasystructure.capability.recipe.ItemRecipeCapability;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class FSRecipes {
     public static final FSRecipeRegistry.String<RecipeCapability<?>> RECIPE_CAPABILITIES = new FSRecipeRegistry.String<>(FantasyStructure.id("recipe_capability"));
@@ -36,6 +40,7 @@ public class FSRecipes {
             ForgeRegistries.RECIPE_TYPES.register(k.getRegistryName(), k);
             ForgeRegistries.RECIPE_SERIALIZERS.register(k.getRegistryName(), FSRecipeSerializer.SERIALIZER);
         });
-
     }
+
+    private FSRecipes() {}
 }

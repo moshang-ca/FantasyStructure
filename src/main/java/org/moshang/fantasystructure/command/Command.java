@@ -56,7 +56,7 @@ public class Command {
         BlockPos pos2 = BlockPosArgument.getLoadedBlockPos(context, "pos2");
         String filename = StringArgumentType.getString(context, "filename");
         if(filename.isEmpty()) {
-            source.sendFailure(Component.translatable("invalid filename"));
+            source.sendFailure(Component.translatable("export.failed.invaild_filename"));
             return 0;
         }
 
@@ -75,7 +75,7 @@ public class Command {
             Path outputFile = configDir.resolve(filename);
 
             if(Files.exists(outputFile)) {
-                source.sendFailure(Component.translatable("file exists"));
+                source.sendFailure(Component.translatable("export.failed.file_exist"));
                 return 0;
             }
 
@@ -91,15 +91,15 @@ public class Command {
             int sizeZ = (maxZ - minZ) + 1;
 
             if(sizeX > 256 || sizeY > 256 || sizeZ > 256) {
-                source.sendFailure(Component.translatable("size too large, must smaller than 256"));
+                source.sendFailure(Component.translatable("export.failed.large_size"));
             }
             if(sizeX <= 0 || sizeY <= 0 || sizeZ <= 0) {
-                source.sendFailure(Component.translatable("invalid size"));
+                source.sendFailure(Component.translatable("export.failed.small_size"));
             }
 
             int volume = sizeX * sizeY * sizeZ;
 
-            source.sendSuccess(() -> Component.translatable("exporting..."), false);
+            source.sendSuccess(() -> Component.translatable("export.exproting"), false);
             source.sendSuccess(() -> Component.literal(String.format(
                     "region: (%d,%d,%d) - (%d,%d,%d)",
                     minX, minY, minZ, maxX, maxY, maxZ
@@ -114,17 +114,17 @@ public class Command {
             );
 
             if(success) {
-                source.sendSuccess(() -> Component.translatable("exported"), false);
-                source.sendSuccess(() -> Component.translatable("file in:" + outputFile.toString()), false);
+                source.sendSuccess(() -> Component.translatable("export.success"), false);
+                source.sendSuccess(() -> Component.translatable("file in:" + outputFile), false);
 
                 return SINGLE_SUCCESS;
             } else {
-                source.sendFailure(Component.translatable("export failed.may be no controller in region"));
+                source.sendFailure(Component.translatable("export.failed.no_controller"));
                 return 0;
             }
         } catch (Exception e) {
             e.printStackTrace();
-            source.sendFailure(Component.translatable("export error"));
+            source.sendFailure(Component.translatable("export.failed.error"));
             return 0;
         }
     }

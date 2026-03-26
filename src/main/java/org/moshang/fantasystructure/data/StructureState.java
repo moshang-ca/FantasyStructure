@@ -105,6 +105,8 @@ public class StructureState {
         while (it.hasNext()) {
             var pos = it.next();
             if(!level.isLoaded(pos)) {
+                unloadedChunks.add(ChunkPos.asLong(pos));
+                it.remove();
                 continue;
             }
             allValid = pattern.matches(level, controllerPos, pos);
@@ -123,7 +125,7 @@ public class StructureState {
         boolean allValid = true;
         collectedBuses.clear();
 
-        while(checked < MAX_CHUNK_CHECKED_PER_TICK) {
+        while(checked < MAX_CHUNK_CHECKED_PER_TICK && !chunkCheckQueue.isEmpty()) {
             var chunkPosLong = chunkCheckQueue.poll();
             var positions = structurePosCache.get(chunkPosLong);
             if(positions == null) continue;

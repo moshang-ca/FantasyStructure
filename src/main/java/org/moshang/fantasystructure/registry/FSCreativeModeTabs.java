@@ -39,4 +39,6 @@ public class FSCreativeModeTabs {
                         Arrays.stream(FSBlocks.FLUID_OUTPUT_BUSES).toList().forEach(item -> pOutput.accept(item.get()));
                     }).build()
     );
+
+    private FSCreativeModeTabs() {}
 }

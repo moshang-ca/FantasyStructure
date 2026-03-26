@@ -20,6 +20,7 @@ public class FSBlockEntities {
             ForgeRegistries.BLOCK_ENTITY_TYPES, FantasyStructure.MODID
     );
 
+    // Controller registry
     public static final RegistryObject<BlockEntityType<BETestController>> TEST_CONTROLLER_BE = register("test_controller", BETestController::new, FSBlocks.TEST_CONTROLLER);
 
     public static final RegistryObject<BlockEntityType<BEItemBus>> ITEM_BUS_BE = register("item_bus", BEItemBus::new, merge(FSBlocks.ITEM_INPUT_BUSES, FSBlocks.ITEM_OUTPUT_BUSES));

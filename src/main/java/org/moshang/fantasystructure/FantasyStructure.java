@@ -33,13 +33,12 @@ import org.slf4j.Logger;
 
 import java.util.Random;
 
-// The value here should match an entry in the META-INF/mods.toml file
 @SuppressWarnings("removal")
 @Mod(FantasyStructure.MODID)
 public class FantasyStructure {
     public static final String MODID = "fantasystructure";
     public static final Random RND = new Random();
-    private static final Logger LOGGER = LogUtils.getLogger();
+    public static final Logger LOGGER = LogUtils.getLogger();
 
     public FantasyStructure() {
         IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
@@ -72,6 +71,7 @@ public class FantasyStructure {
         FSMenuType.registerMenuFactories();
         FSRecipes.initRecipeCapabilities();
         FSRecipes.initRecipeTypes();
+        FSStructureDefinitions.init();
     }
 
     @SubscribeEvent

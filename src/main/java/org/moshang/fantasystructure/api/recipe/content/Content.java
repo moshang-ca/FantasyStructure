@@ -7,11 +7,11 @@ import org.moshang.fantasystructure.api.capability.recipe.RecipeCapability;
 
 @Getter
 public class Content {
-    private Object content;
-    private boolean perTick;
-    private float chance;
+    private final Object content;
+    private final boolean perTick;
+    private final float chance;
     @NotNull
-    private String slotName;
+    private final String slotName;
 
     public Content(Object content, boolean perTick, float chance, @Nullable String slotName) {
         this.content = content;

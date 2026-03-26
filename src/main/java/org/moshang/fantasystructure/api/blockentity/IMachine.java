@@ -15,6 +15,9 @@ import org.moshang.fantasystructure.api.recipe.content.ContentModifier;
 
 import java.util.Optional;
 
+/**
+ * Any controller must implement this to have capability of handling recipes
+ */
 public interface IMachine extends IRecipeCapabilityHolder {
     BlockEntity getHolder();
     Optional<Direction> getFrontFacing();

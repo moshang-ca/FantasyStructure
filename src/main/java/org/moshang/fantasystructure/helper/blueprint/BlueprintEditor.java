@@ -5,6 +5,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.material.Fluids;
 import org.moshang.fantasystructure.Config;
 import org.moshang.fantasystructure.api.blockentity.BlockEntityControllerBase;
 import org.slf4j.Logger;
@@ -31,6 +32,7 @@ public class BlueprintEditor {
         LOGGER.info("Initialized blueprint editor with {} threads free", threadCount);
     }
 
+    @SuppressWarnings("ResultOfMethodCallIgnored")
     public static void saveBinary(Path outputFile, int sizeX, int sizeY, int sizeZ,
                                   byte[][][] voxels, List<String> blockStateTable,
                                   Set<String> modDependencies, BlockPos controllerOffset) throws IOException {
@@ -102,7 +104,7 @@ public class BlueprintEditor {
         ExtractionInfo info = extractVoxels(level, pos1, pos2);
         BlockPos minCorner = info.minCorner();
         BlockPos controllerPos = info.controllerPos();
-        if(controllerPos == null) {
+        if (controllerPos == null) {
             return false;
         }
 
@@ -187,6 +189,13 @@ public class BlueprintEditor {
                     if(blockState.isAir()) {
                         voxels[y][z][x] = 0;
                         continue;
+                    } else {
+                        var fluidState = blockState.getFluidState();
+                        if(!fluidState.isEmpty()) {
+                            if(fluidState.getType() == Fluids.FLOWING_WATER) {
+                                throw new IllegalStateException("The structure can not have flowing fluid in definition");
+                            }
+                        }
                     }
 
                     String blockStateStr = blockState.toString();

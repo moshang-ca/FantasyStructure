@@ -1,10 +1,8 @@
 package org.moshang.fantasystructure.util;
 
-import com.lowdragmc.lowdraglib.LDLib;
 import com.lowdragmc.lowdraglib.client.scene.ParticleManager;
 import com.lowdragmc.lowdraglib.core.mixins.accessor.EntityAccessor;
 import com.lowdragmc.lowdraglib.utils.DummyWorld;
-import com.lowdragmc.lowdraglib.utils.TrackedDummyWorld;
 import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import lombok.Getter;
@@ -24,7 +22,6 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.ChunkSource;
 import net.minecraft.world.level.entity.LevelEntityGetter;
@@ -42,7 +39,7 @@ import java.util.function.Predicate;
 
 @ParametersAreNonnullByDefault
 @MethodsReturnNonnullByDefault
-@SuppressWarnings({"rawtypes", "unchecked", "ConstantValue"})
+@SuppressWarnings({"ConstantValue"})
 public class PreviewDummyWorld extends DummyWorld {
     @Setter
     private Predicate<BlockPos> renderFilter;
@@ -58,13 +55,12 @@ public class PreviewDummyWorld extends DummyWorld {
     public final Vector3f maxPos = new Vector3f(Integer.MIN_VALUE, Integer.MIN_VALUE, Integer.MIN_VALUE);
 
     public PreviewDummyWorld() {
-        super(Minecraft.getInstance().level);
-        proxyWorld = new WeakReference<>(null);
+        this(Minecraft.getInstance().level);
     }
 
-    public PreviewDummyWorld(Level world) {
-        super(world);
-        proxyWorld = new WeakReference<>(world);
+    public PreviewDummyWorld(Level level) {
+        super(level);
+        proxyWorld = new WeakReference<>(null);
     }
 
     public void clear() {
@@ -95,11 +91,6 @@ public class PreviewDummyWorld extends DummyWorld {
         return this.renderedBlocks.remove(pos);
     }
 
-    // wth? mcp issue
-    public void setInnerBlockEntity(BlockEntity pBlockEntity) {
-        blockEntities.put(pBlockEntity.getBlockPos(), pBlockEntity);
-    }
-
     @Override
     public void setBlockEntity(BlockEntity pBlockEntity) {
         blockEntities.put(pBlockEntity.getBlockPos(), pBlockEntity);
@@ -113,6 +104,7 @@ public class PreviewDummyWorld extends DummyWorld {
     }
 
     @Override
+    @SuppressWarnings("DataFlowIssue")
     public BlockEntity getBlockEntity(BlockPos pos) {
         if (renderFilter != null && !renderFilter.test(pos))
             return null;
@@ -123,7 +115,7 @@ public class PreviewDummyWorld extends DummyWorld {
     @Override
     public BlockState getBlockState(BlockPos pos) {
         if (renderFilter != null && !renderFilter.test(pos))
-            return Blocks.AIR.defaultBlockState(); //return air if not rendering this
+            return Blocks.AIR.defaultBlockState();
         Level proxy = proxyWorld.get();
         return proxy != null ? proxy.getBlockState(pos) : renderedBlocks.getOrDefault(pos, BlockInfo.EMPTY).getExpectedState();
     }
@@ -148,7 +140,7 @@ public class PreviewDummyWorld extends DummyWorld {
         stack.getTag()
                 .getAllKeys()
                 .stream()
-                .filter(TrackedDummyWorld::isUnsafeItemNBTKey)
+                .filter(PreviewDummyWorld::isUnsafeItemNBTKey)
                 .forEach(copy::removeTagKey);
         if (copy.getTag().isEmpty())
             copy.setTag(null);
@@ -226,41 +218,41 @@ public class PreviewDummyWorld extends DummyWorld {
         return particleManager;
     }
 
-    public void tickWorld() {
-        var iter = entities.values().iterator();
-        while (iter.hasNext()) {
-            var entity = iter.next();
-            entity.tickCount++;
-            entity.setOldPosAndRot();
-            entity.tick();
-
-            if (entity.getY() <= -.5f)
-                entity.discard();
-
-            if (!entity.isAlive())
-                iter.remove();
-        }
-
-        for (var entry : renderedBlocks.entrySet()) {
-            var blockState = entry.getValue().getExpectedState();
-            var blockEntity = getBlockEntity(entry.getKey());
-            if (blockEntity != null && blockEntity.getType().isValid(blockState)) {
-                try {
-                    BlockEntityTicker ticker = blockState.getTicker(this, blockEntity.getType());
-                    if (ticker != null) {
-                        ticker.tick(this, entry.getKey(), blockState, blockEntity);
-                    }
-                } catch (Exception e) {
-                    LDLib.LOGGER.error("error while update DummyWorld tick, pos {} type {}", entry.getKey(), blockEntity.getType(), e);
-                }
-            }
-        }
-    }
+//    public void tickWorld() {
+//        var iter = entities.values().iterator();
+//        while (iter.hasNext()) {
+//            var entity = iter.next();
+//            entity.tickCount++;
+//            entity.setOldPosAndRot();
+//            entity.tick();
+//
+//            if (entity.getY() <= -.5f)
+//                entity.discard();
+//
+//            if (!entity.isAlive())
+//                iter.remove();
+//        }
+//
+//        for (var entry : renderedBlocks.entrySet()) {
+//            var blockState = entry.getValue().getExpectedState();
+//            var blockEntity = getBlockEntity(entry.getKey());
+//            if (blockEntity != null && blockEntity.getType().isValid(blockState)) {
+//                try {
+//                    BlockEntityTicker ticker = blockState.getTicker(this, blockEntity.getType());
+//                    if (ticker != null) {
+//                        ticker.tick(this, entry.getKey(), blockState, blockEntity);
+//                    }
+//                } catch (Exception e) {
+//                    LDLib.LOGGER.error("error while update DummyWorld tick, pos {} type {}", entry.getKey(), blockEntity.getType(), e);
+//                }
+//            }
+//        }
+//    }
 
     public List<Entity> getAllEntities() {
         var entities = new ArrayList<>(this.entities.values());
-        if (proxyWorld.get() instanceof TrackedDummyWorld trackedDummyWorld)
-            entities.addAll(trackedDummyWorld.getAllEntities());
+        if (proxyWorld.get() instanceof PreviewDummyWorld previewDummyWorld)
+            entities.addAll(previewDummyWorld.getAllEntities());
         return entities;
     }
 }

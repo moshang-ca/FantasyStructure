@@ -246,7 +246,6 @@ public class Blueprint {
         }
     }
 
-    // Use long2Object map
     private void decodeRLEToPattern(ByteBuffer data, Long2ObjectOpenHashMap<BlockInfo> pattern,
                                     Map<ResourceLocation, Integer> materialMap) {
         int voxelIndex = 0;

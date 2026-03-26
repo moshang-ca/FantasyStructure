@@ -17,8 +17,16 @@ import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.material.Fluid;
+import net.minecraft.world.level.material.FluidState;
+import net.minecraft.world.level.material.Fluids;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
+import net.minecraftforge.fluids.FluidStack;
+import net.minecraftforge.fluids.FluidUtil;
+import net.minecraftforge.fluids.capability.IFluidHandler;
+import net.minecraftforge.fluids.capability.IFluidHandlerItem;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.registries.ForgeRegistries;
 import org.jetbrains.annotations.Nullable;
@@ -29,6 +37,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
+// TODO: Open screen when use shift + right-click
+// TODO: Remove clear position storage function when use shift + right-click
 public class ItemAutoBuilder extends Item {
     private static final String BUILDER_DATA = FantasyStructure.MODID + "_builder_data";
 
@@ -100,11 +110,10 @@ public class ItemAutoBuilder extends Item {
         return false;
     }
 
-    public static @Nullable ItemStack shrinkMaterials(Level level, ItemStack stack, ResourceLocation blockId) {
+    public static ItemStack shrinkMaterials(Level level, ItemStack stack, Set<TagKey<Block>> blockTagKeys, BlockState blockState) {
         List<BlockPos> containerPositions = loadTag(stack);
         for(BlockPos pos : containerPositions) {
             if(!level.isLoaded(pos)) continue;
-
             BlockEntity be = level.getBlockEntity(pos);
             if(be == null) continue;
 
@@ -119,37 +128,7 @@ public class ItemAutoBuilder extends Item {
                     if(!stackInSlot.isEmpty()) {
                         Item item = stackInSlot.getItem();
                         if(item instanceof BlockItem blockItem) {
-                            if(blockId.equals(ForgeRegistries.BLOCKS.getKey(blockItem.getBlock()))) {
-                                return shrinkMaterials(level, pos, i);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        return null;
-    }
-
-    public static @Nullable ItemStack shrinkMaterials(Level level, ItemStack stack, Set<TagKey<Block>> blockTagKeys, ResourceLocation blockId) {
-        List<BlockPos> containerPositions = loadTag(stack);
-        for(BlockPos pos : containerPositions) {
-            if(!level.isLoaded(pos)) continue;
-
-            BlockEntity be = level.getBlockEntity(pos);
-            if(be == null) continue;
-
-            LazyOptional<IItemHandler> capability = be.getCapability(ForgeCapabilities.ITEM_HANDLER);
-            if(capability.isPresent()) {
-                IItemHandler itemHandler = capability.orElseThrow(
-                        () -> new IllegalStateException("Item handler capacity is present but empty!")
-                );
-
-                for(int i = 0; i < itemHandler.getSlots(); i++) {
-                    ItemStack stackInSlot = itemHandler.getStackInSlot(i);
-                    if(!stackInSlot.isEmpty()) {
-                        Item item = stackInSlot.getItem();
-                        if(item instanceof BlockItem blockItem) {
-                            if(blockId.equals(ForgeRegistries.BLOCKS.getKey(blockItem.getBlock()))) {
+                            if(blockState.is(blockItem.getBlock())) {
                                 return itemHandler.extractItem(i, 1, false);
                             } else {
                                 for(TagKey<Block> tagKey : blockTagKeys) {
@@ -163,23 +142,43 @@ public class ItemAutoBuilder extends Item {
                 }
             }
         }
-        return null;
+        return ItemStack.EMPTY;
     }
 
-    private static @Nullable ItemStack shrinkMaterials(Level level, BlockPos pos, int slot) {
-        if(!level.isLoaded(pos)) return null;
+    public static Fluid shrinkMaterials(Level level, ItemStack stack, FluidState fluidState) {
+        List<BlockPos> containerPositions = loadTag(stack);
+        for(BlockPos pos : containerPositions) {
+            if(!level.isLoaded(pos)) continue;
+            BlockEntity be = level.getBlockEntity(pos);
+            if(be == null) continue;
 
-        BlockEntity be = level.getBlockEntity(pos);
+            LazyOptional<IItemHandler> capability = be.getCapability(ForgeCapabilities.ITEM_HANDLER);
+            if(capability.isPresent()) {
+                IItemHandler itemHandler = capability.orElseThrow(
+                        () -> new IllegalStateException("Item handler capacity is present but empty!")
+                );
 
-        LazyOptional<IItemHandler> capability = be.getCapability(ForgeCapabilities.ITEM_HANDLER);
-        if(capability.isPresent()) {
-            IItemHandler itemHandler = capability.orElseThrow(
-                    () -> new IllegalStateException("Item handler capacity is present but empty!")
-            );
-
-            return itemHandler.extractItem(slot, 1, false);
+                for(int i = 0; i < itemHandler.getSlots(); i++) {
+                    ItemStack stackInSlot = itemHandler.getStackInSlot(i);
+                    LazyOptional<IFluidHandlerItem> fluidCapability = stackInSlot.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM);
+                    if(fluidCapability.isPresent()) {
+                        var handler = fluidCapability.orElseThrow(() -> new IllegalStateException("Fluid handler capacity is present but empty!"));
+                        var toDrain = new FluidStack(fluidState.getType(), 1000);
+                        var drained = handler.drain(toDrain, IFluidHandler.FluidAction.SIMULATE);
+                        if (!drained.isEmpty() && drained.getAmount() >= 1000) {
+                            handler.drain(drained, IFluidHandler.FluidAction.EXECUTE);
+                            if(FluidUtil.getFluidContained(stackInSlot).map(fluidStack -> !fluidStack.isEmpty())
+                                    .orElse(false)) {
+                                itemHandler.extractItem(i, 1, false);
+                                itemHandler.insertItem(i, handler.getContainer(), false);
+                            }
+                            return fluidState.getType();
+                        }
+                    }
+                }
+            }
         }
-        return null;
+        return Fluids.EMPTY;
     }
 
     private void clearContainerPositions(ItemStack stack) {
