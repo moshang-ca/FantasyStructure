@@ -46,7 +46,7 @@ import java.util.function.Consumer;
 
 /**
  * Override from {@link com.lowdragmc.lowdraglib.gui.widget.SceneWidget},
- * but use {@link PreviewDummyWorld} instead of {@link com.lowdragmc.lowdraglib.utils.TrackedDummyWorld}
+ * but use {@link PreviewDummyWorld} instead of TrackDummyWorld
  */
 @SuppressWarnings({"unused", "UnusedReturnValue", "SameParameterValue"})
 public class SceneWidget extends WidgetGroup {
@@ -80,6 +80,8 @@ public class SceneWidget extends WidgetGroup {
     protected float rotationPitch = -135;
     @Getter
     protected float zoom = 5;
+    @Getter
+    protected float moveSensitivity = .05f;
     @Getter
     protected float range;
     @Getter
@@ -530,13 +532,53 @@ public class SceneWidget extends WidgetGroup {
     public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
         if (!intractable) return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
         if (dragging) {
-            rotationPitch += (float) (dragX + 360);
-            rotationPitch = rotationPitch % 360;
-            rotationYaw = (float) Mth.clamp(rotationYaw + dragY, -89.9, 89.9);
-            if (renderer != null) {
-                renderer.setCameraLookAt(center, camZoom(), Math.toRadians(rotationPitch), Math.toRadians(rotationYaw));
+            if(button == 0) {
+                rotationPitch += (float) (dragX + 360);
+                rotationPitch = rotationPitch % 360;
+                rotationYaw = (float) Mth.clamp(rotationYaw + dragY, -89.9, 89.9);
+                if (renderer != null) {
+                    renderer.setCameraLookAt(center, camZoom(), Math.toRadians(rotationPitch), Math.toRadians(rotationYaw));
+                }
+                return false;
+            } else if(button == 1) {
+                double yaw = Math.toRadians(rotationYaw);    // 修复：yaw对应rotationYaw
+                double pitch = Math.toRadians(rotationPitch);  // 修复：pitch对应rotationPitch
+
+                Vector3f forward = new Vector3f(
+                        (float) (Math.cos(pitch) * Math.cos(yaw)),
+                        (float) Math.sin(pitch),
+                        (float) (Math.cos(pitch) * Math.sin(yaw))
+                );
+                forward.normalize();
+
+                Vector3f right = new Vector3f(
+                        (float) Math.cos(yaw),
+                        0,
+                        (float) Math.sin(yaw)
+                );
+                right.normalize();
+
+                Vector3f up = new Vector3f();
+                right.cross(forward, up);
+                up.normalize();
+
+                float moveRight = (float) (dragX * moveSensitivity);
+                float moveUp = (float) (dragY * moveSensitivity);
+
+                Vector3f delta = new Vector3f(0, 0, 0);
+                delta.add(right.mul(moveRight));
+                delta.add(up.mul(moveUp));
+
+                center = new Vector3f(
+                        center.x + delta.x,
+                        center.y + delta.y,
+                        center.z + delta.z
+                );
+                if (renderer != null) {
+                    renderer.setCameraLookAt(center, camZoom(), Math.toRadians(rotationPitch), Math.toRadians(rotationYaw));
+                }
+                return false;
             }
-            return false;
         }
         return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
     }

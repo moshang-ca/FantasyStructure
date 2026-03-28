@@ -55,12 +55,13 @@ public class PreviewDummyWorld extends DummyWorld {
     public final Vector3f maxPos = new Vector3f(Integer.MIN_VALUE, Integer.MIN_VALUE, Integer.MIN_VALUE);
 
     public PreviewDummyWorld() {
-        this(Minecraft.getInstance().level);
+        super(Minecraft.getInstance().level);
+        proxyWorld = new WeakReference<>(null);
     }
 
     public PreviewDummyWorld(Level level) {
         super(level);
-        proxyWorld = new WeakReference<>(null);
+        proxyWorld = new WeakReference<>(level);
     }
 
     public void clear() {

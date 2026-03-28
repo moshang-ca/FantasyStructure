@@ -2,11 +2,9 @@ package org.moshang.fantasystructure.client.widget;
 
 import com.lowdragmc.lowdraglib.gui.editor.ColorPattern;
 import com.lowdragmc.lowdraglib.gui.texture.ResourceBorderTexture;
-import com.lowdragmc.lowdraglib.gui.texture.ResourceTexture;
 import com.lowdragmc.lowdraglib.gui.texture.TextTexture;
 import com.lowdragmc.lowdraglib.gui.widget.*;
 import com.lowdragmc.lowdraglib.jei.IngredientIO;
-import com.lowdragmc.lowdraglib.side.item.IItemTransfer;
 import com.lowdragmc.lowdraglib.side.item.forge.ItemTransferHelperImpl;
 import com.mojang.blaze3d.systems.RenderSystem;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
@@ -49,7 +47,7 @@ public class PreviewWidget extends WidgetGroup {
         this.definition = definition;
 
         addWidget(new ImageWidget(3, 4, 154, 154, ResourceBorderTexture.BORDERED_BACKGROUND_INVERSE));
-        addWidget(sceneWidget = new SceneWidget(3 + 3, 4 + 3, 148, 100, LEVEL, true)
+        addWidget(sceneWidget = new SceneWidget(3 + 3, 4 + 3, 128, 128, LEVEL, true)
                 .setOnSelected(this::onPosSelected)
                 .setRenderFacing(false)
                 .setRenderFacing(false));
@@ -68,7 +66,7 @@ public class PreviewWidget extends WidgetGroup {
                         .setWidth(148)
                         .setDropShadow(true)));
 
-        this.scrollableWidget = new PageScrollableWidget(3 + 3, 154 - 20, 148, 22)
+        this.scrollableWidget = new PageScrollableWidget(3 + 3, 154 - 20, 148, 18)
                 .setBackground(ColorPattern.T_BLACK.rectTexture())
                 .setOnScroll(this::setupMaterials);
         NonNullList<ItemStack> items = NonNullList.withSize(8, ItemStack.EMPTY);
@@ -166,6 +164,4 @@ public class PreviewWidget extends WidgetGroup {
         RenderSystem.enableBlend();
         super.drawInBackground(graphics, mouseX, mouseY, partialTicks);
     }
-
-
 }
