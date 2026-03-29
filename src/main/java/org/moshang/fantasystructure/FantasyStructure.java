@@ -2,8 +2,10 @@ package org.moshang.fantasystructure;
 
 import com.mojang.logging.LogUtils;
 import net.minecraft.client.gui.screens.MenuScreens;
+import net.minecraft.client.renderer.blockentity.BlockEntityRenderers;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.client.event.RegisterShadersEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.crafting.CraftingHelper;
 import net.minecraftforge.event.RegisterCommandsEvent;
@@ -18,6 +20,8 @@ import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.fml.loading.FMLPaths;
 import org.moshang.fantasystructure.api.recipe.ingredient.SizedIngredient;
+import org.moshang.fantasystructure.client.render.ShaderLoader;
+import org.moshang.fantasystructure.client.render.StarCoreRenderer;
 import org.moshang.fantasystructure.client.screen.ControllerScreen;
 import org.moshang.fantasystructure.client.screen.EnergyBusScreen;
 import org.moshang.fantasystructure.client.screen.FluidBusScreen;
@@ -96,7 +100,14 @@ public class FantasyStructure {
                 MenuScreens.register(FSMenuType.ITEM_BUS_MENU_TYPE.get(), ItemBusScreen::new);
                 MenuScreens.register(FSMenuType.ENERGY_BUS_MENU_TYPE.get(), EnergyBusScreen::new);
                 MenuScreens.register(FSMenuType.FLUID_BUS_MENU_TYPE.get(), FluidBusScreen::new);
+
+                BlockEntityRenderers.register(FSBlockEntities.STAR_CORE_BE.get(), StarCoreRenderer::new);
             });
+        }
+
+        @SubscribeEvent
+        public static void onRegisterShaders(RegisterShadersEvent event) {
+            ShaderLoader.getInstance().loadShaders("star_core", event.getResourceProvider());
         }
     }
 }

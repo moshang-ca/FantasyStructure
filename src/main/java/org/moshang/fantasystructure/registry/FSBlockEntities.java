@@ -7,6 +7,7 @@ import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import org.moshang.fantasystructure.FantasyStructure;
+import org.moshang.fantasystructure.blockentity.BEStarCore;
 import org.moshang.fantasystructure.blockentity.container.BEEnergyBus;
 import org.moshang.fantasystructure.blockentity.container.BEFluidBus;
 import org.moshang.fantasystructure.blockentity.container.BEItemBus;
@@ -28,6 +29,8 @@ public class FSBlockEntities {
     public static final RegistryObject<BlockEntityType<BEFluidBus>> FLUID_BUS_BE = register("fluid_bus", BEFluidBus::new, merge(FSBlocks.FLUID_INPUT_BUSES, FSBlocks.FLUID_OUTPUT_BUSES));
 
     public static final RegistryObject<BlockEntityType<BlockEntityCreativeEnergySource>> CREATIVE_ENERGY_SOURCE_BE = register("creative_energy_source", BlockEntityCreativeEnergySource::new, FSBlocks.CREATIVE_ENERGY_SOURCE);
+
+    public static final RegistryObject<BlockEntityType<BEStarCore>> STAR_CORE_BE = register("star_core", BEStarCore::new, FSBlocks.STAR_CORE);
 
     private FSBlockEntities() {}
 

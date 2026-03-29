@@ -11,6 +11,7 @@ import org.moshang.fantasystructure.api.capacity.ComponentEnergyCapacity;
 import org.moshang.fantasystructure.api.capacity.ComponentFluidCapacity;
 import org.moshang.fantasystructure.api.capacity.ComponentItemCapacity;
 import org.moshang.fantasystructure.api.capability.recipe.IO;
+import org.moshang.fantasystructure.block.BlockStarCore;
 import org.moshang.fantasystructure.block.container.BlockEnergyBus;
 import org.moshang.fantasystructure.block.container.BlockFluidBus;
 import org.moshang.fantasystructure.block.container.BlockItemBus;
@@ -69,6 +70,8 @@ public class FSBlocks {
     ).toArray(RegistryObject[]::new);
 
     public static final RegistryObject<Block> CREATIVE_ENERGY_SOURCE = register("creative_energy_source", () -> new BlockCreativeEnergySource(3));
+
+    public static final RegistryObject<Block> STAR_CORE = register("star_core", BlockStarCore::new);
 
     private FSBlocks() {}
 
