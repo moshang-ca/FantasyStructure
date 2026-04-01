@@ -1,0 +1,37 @@
+{
+  "vertex": "fantasystructure:star_vertex",
+  "fragment": "fantasystructure:star_fragment",
+  "attributes": [
+    "Position",
+    "UV0"
+  ],
+  "samplers": [
+    {"name": "Sampler0"}
+  ],
+  "uniforms": [
+    {
+      "name": "ModelViewMat",
+      "type": "matrix4x4",
+      "count": 16,
+      "values": [ 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0 ]
+    },
+    {
+      "name": "ProjMat",
+      "type": "matrix4x4",
+      "count": 16,
+      "values": [ 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0 ]
+    },
+    {
+      "name": "coreColor",
+      "type": "float",
+      "count": 3,
+      "values": [1.0, 0.6, 0.2]
+    },
+    {
+      "name": "edgeColor",
+      "type": "float",
+      "count": 3,
+      "values": [1.0, 0.6, 0.2]
+    }
+  ]
+}

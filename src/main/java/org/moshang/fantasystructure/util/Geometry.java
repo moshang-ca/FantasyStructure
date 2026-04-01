@@ -10,12 +10,8 @@ import static net.minecraft.util.Mth.TWO_PI;
 import static org.moshang.fantasystructure.util.MathUtil.PHI;
 
 public class Geometry {
-    static final int[][] ICOSAHEDRON_FACES = {
-            {0, 11, 5}, {0, 5, 1}, {0, 1, 7}, {0, 7, 10}, {0, 10, 11},
-            {1, 5, 9}, {5, 11, 4}, {11, 10, 2}, {10, 7, 6}, {7, 1, 8},
-            {3, 9, 4}, {3, 4, 2}, {3, 2, 6}, {3, 6, 8}, {3, 8, 9},
-            {4, 9, 5}, {2, 4, 11}, {6, 2, 10}, {8, 6, 7}, {9, 8, 1}
-    };
+    public static List<Vertex> ICOSAHEDRON = icosahedron();
+    public static List<Vertex> CUBE = cube();
 
     public static List<Vertex> subdivide(List<Vertex> vertices, int subdivisions) {
         List<Vertex> result = new ArrayList<>(vertices);
@@ -27,8 +23,13 @@ public class Geometry {
         return result;
     }
 
-    public static List<Vertex> smoothSphere(float radius, int subdivisions) {
-        List<Vertex> sphere = computeSmoothNormals(subdivide(icosahedron(), subdivisions));
+    /**
+     * Return a icosphere mesh data
+     * @param radius the radius of sphere
+     * @param subdivisions the number of subdivisions
+     */
+    public static List<Vertex> icosphere(float radius, int subdivisions) {
+        List<Vertex> sphere = smoothNormals(subdivide(ICOSAHEDRON, subdivisions));
 
         List<Vertex> result = new ArrayList<>();
         for(Vertex v : sphere) {
@@ -49,8 +50,39 @@ public class Geometry {
         return result;
     }
 
+    /**
+     * Return a unit cube mesh data,
+     * use {@link #CUBE} instead.
+     */
+    public static List<Vertex> cube() {
+        final List<Vec3> vertices = List.of(
+                new Vec3(-1, -1,  1).normalize(),
+                new Vec3( 1, -1,  1).normalize(),
+                new Vec3( 1,  1,  1).normalize(),
+                new Vec3(-1,  1,  1).normalize(),
+                new Vec3(-1, -1, -1).normalize(),
+                new Vec3( 1, -1, -1).normalize(),
+                new Vec3( 1,  1, -1).normalize(),
+                new Vec3(-1,  1, -1).normalize()
+        );
+        final int[][] CUBE_FACE = {
+                {0, 1, 2}, {2, 3, 0},
+                {1, 5, 6}, {6, 2, 1},
+                {5, 4, 7}, {7, 6, 5},
+                {4, 0, 3}, {3, 7, 4},
+                {3, 2, 6}, {6, 7, 3},
+                {4, 5, 1}, {1, 0, 4}
+        };
+
+        return calFace(vertices, CUBE_FACE);
+    }
+
+    /**
+     * Return a regular icosahedron mesh data,
+     * use {@link #ICOSAHEDRON} instead.
+     */
     public static List<Vertex> icosahedron() {
-        List<Vec3> vertices = List.of(
+        final List<Vec3> vertices = List.of(
                 new Vec3(-1, PHI, 0).normalize(),
                 new Vec3(1, PHI, 0).normalize(),
                 new Vec3(-1, -PHI, 0).normalize(),
@@ -64,9 +96,19 @@ public class Geometry {
                 new Vec3(-PHI, 0, -1).normalize(),
                 new Vec3(-PHI, 0, 1).normalize()
         );
+        final int[][] ICOSAHEDRON_FACES = {
+                {0, 11, 5}, {0, 5, 1}, {0, 1, 7}, {0, 7, 10}, {0, 10, 11},
+                {1, 5, 9}, {5, 11, 4}, {11, 10, 2}, {10, 7, 6}, {7, 1, 8},
+                {3, 9, 4}, {3, 4, 2}, {3, 2, 6}, {3, 6, 8}, {3, 8, 9},
+                {4, 9, 5}, {2, 4, 11}, {6, 2, 10}, {8, 6, 7}, {9, 8, 1}
+        };
 
+        return calFace(vertices, ICOSAHEDRON_FACES);
+    }
+
+    static List<Vertex> calFace(List<Vec3> vertices, int[][] primitives) {
         List<Vertex> mesh = new ArrayList<>();
-        for(var face : ICOSAHEDRON_FACES) {
+        for(var face : primitives) {
             Vec3 v1 = vertices.get(face[0]);
             Vec3 v2 = vertices.get(face[1]);
             Vec3 v3 = vertices.get(face[2]);
@@ -81,23 +123,10 @@ public class Geometry {
                 v3 = tmp;
             }
 
-            mesh.add(new Vertex(
-                    (float) v1.x, (float) v1.y, (float) v1.z,
-                    (float) v1.x, (float) v1.y, (float) v1.z,
-                    0, 0
-            ));
-            mesh.add(new Vertex(
-                    (float) v2.x, (float) v2.y, (float) v2.z,
-                    (float) v2.x, (float) v2.y, (float) v2.z,
-                    0, 0
-            ));
-            mesh.add(new Vertex(
-                    (float) v3.x, (float) v3.y, (float) v3.z,
-                    (float) v3.x, (float) v3.y, (float) v3.z,
-                    0, 0
-            ));
+            mesh.add(new Vertex(v1));
+            mesh.add(new Vertex(v2));
+            mesh.add(new Vertex(v3));
         }
-
 
         return mesh;
     }
@@ -123,7 +152,7 @@ public class Geometry {
         return newVertices;
     }
 
-    static List<Vertex> computeSmoothNormals(List<Vertex> vertices) {
+    public static List<Vertex> smoothNormals(List<Vertex> vertices) {
         Map<PositionKey, List<Integer>> positionGroup = new HashMap<>();
         for(int i = 0; i < vertices.size(); ++i) {
             Vertex v = vertices.get(i);
@@ -187,7 +216,31 @@ public class Geometry {
         return mid;
     }
 
-    public record Vertex(float x, float y, float z, float nx, float ny, float nz, float u, float v) {
+    public record Vertex(float x, float y, float z,
+                         float nx, float ny, float nz,
+                         float u, float v, int color) {
+        public Vertex(float x, float y, float z, float nx, float ny, float nz, float u, float v) {
+            this(x, y, z, nx, ny, nz, u, v, -1);
+        }
+
+        public Vertex(Vec3 vert) {
+            this((float) vert.x, (float) vert.y, (float) vert.z,
+                    (float) vert.x, (float) vert.y, (float) vert.z,
+                    0, 0);
+        }
+
+        public float[] rgb() {
+            return MathUtil.colorToFloat3D(color);
+        }
+
+        public float[] rgba() {
+            return MathUtil.colorToFloat4D(color);
+        }
+
+        public boolean hasColor() {
+            return color >= 0;
+        }
+
         @Override
         public boolean equals(Object o) {
             if (!(o instanceof Vertex vertex)) return false;
