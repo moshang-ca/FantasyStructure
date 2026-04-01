@@ -10,6 +10,8 @@ import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Matrix4f;
 import org.lwjgl.opengl.*;
@@ -23,9 +25,10 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
+@OnlyIn(Dist.CLIENT)
 public class StarCoreRenderer implements BlockEntityRenderer<BEStarCore> {
     private static final ResourceLocation STAR_TEXTURE = FantasyStructure.id("textures/entity/star_core.png");
-    private static final float SIZE = 5.f;
+    private static final float SIZE = 10.f;
     private final static AtomicBoolean initialized = new AtomicBoolean(false);
 
     // VBO
@@ -143,7 +146,7 @@ public class StarCoreRenderer implements BlockEntityRenderer<BEStarCore> {
             return;
         }
 
-        var shader = ShaderLoader.getInstance().getShader();
+        var shader = ShaderLoader.getShader("star_core");
         if(shader == null) return;
 
         pPoseStack.pushPose();
@@ -158,17 +161,11 @@ public class StarCoreRenderer implements BlockEntityRenderer<BEStarCore> {
         try {
             setupUniforms(shader, pBlockEntity, pPartialTick, pPoseStack);
             renderWithVBO();
-            // renderWithBuffer(pPoseStack, pBuffer, pPackedLight, pPackedOverlay);
         } finally {
             shader.clear();
         }
 
         pPoseStack.popPose();
-    }
-
-    @Override
-    public boolean shouldRenderOffScreen(BEStarCore pBlockEntity) {
-        return true;
     }
 
     private void setupUniforms(ShaderInstance shader, BEStarCore star, float partialTick, PoseStack poseStack) {
@@ -183,11 +180,6 @@ public class StarCoreRenderer implements BlockEntityRenderer<BEStarCore> {
         float[] edgeColor = MathUtil.colorToFloat3D(star.getEdgeColor());
         shader.safeGetUniform("coreColor").set(coreColor[0], coreColor[1], coreColor[2]);
         shader.safeGetUniform("edgeColor").set(edgeColor[0], edgeColor[1], edgeColor[2]);
-
-//        shader.safeGetUniform("brightness").set(star.getBrightness());
-//
-//        var window = Minecraft.getInstance().getWindow();
-//        shader.safeGetUniform("resolution").set(new float[] { window.getWidth(), window.getHeight() });
     }
 
     private void renderWithVBO() {
@@ -202,15 +194,11 @@ public class StarCoreRenderer implements BlockEntityRenderer<BEStarCore> {
         RenderSystem.enableDepthTest();
 
         RenderSystem.setShaderTexture(0, STAR_TEXTURE);
-
         RenderSystem.activeTexture(GL13.GL_TEXTURE0);
         int texId = Minecraft.getInstance().getTextureManager().getTexture(STAR_TEXTURE).getId();
         GL11.glBindTexture(GL11.GL_TEXTURE_2D, texId);
-        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL11.GL_REPEAT);
-        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL11.GL_REPEAT);
 
         GL30.glBindVertexArray(vaoId);
-        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL11.GL_REPEAT);
         GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, vertexCount);
         GL30.glBindVertexArray(currentVAO);
 

@@ -107,7 +107,7 @@ public class FantasyStructure {
 
         @SubscribeEvent
         public static void onRegisterShaders(RegisterShadersEvent event) {
-            ShaderLoader.getInstance().loadShaders("star_core", event.getResourceProvider());
+            ShaderLoader.loadShaders("star_core", event.getResourceProvider());
         }
     }
 }
