@@ -2,10 +2,6 @@ package org.moshang.fantasystructure.block;
 
 import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.core.BlockPos;
-import net.minecraft.network.chat.Component;
-import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResult;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
@@ -15,7 +11,6 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.phys.BlockHitResult;
 import org.jetbrains.annotations.Nullable;
 import org.moshang.fantasystructure.blockentity.BEStarCore;
 import org.moshang.fantasystructure.registry.FSBlockEntities;
@@ -62,16 +57,5 @@ public class BlockStarCore extends Block implements EntityBlock {
     createTickerHelper(BlockEntityType<A> actualType, BlockEntityType<E> expectedType,
                        BlockEntityTicker<? super E> ticker) {
         return expectedType == actualType ? (BlockEntityTicker<A>) ticker : null;
-    }
-
-    @Override
-    public InteractionResult use(BlockState pState, Level pLevel, BlockPos pPos, Player pPlayer, InteractionHand pHand, BlockHitResult pHit) {
-        if(pLevel.isClientSide) {
-            if(pLevel.getBlockEntity(pPos) instanceof BEStarCore star) {
-                pPlayer.sendSystemMessage(Component.literal("rotation angle: %f".formatted(star.getRotationAngle())));
-                return InteractionResult.SUCCESS;
-            }
-        }
-        return InteractionResult.PASS;
     }
 }

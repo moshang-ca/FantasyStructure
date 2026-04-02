@@ -40,7 +40,7 @@ void main() {
     float NdotV = max(0., dot(vertexNormal, viewDirection));
     float fresnel = pow(1 - NdotV, 6.);
 
-    float scale = .5;
+    float scale = 0.1;
     vec4 starTex = triplanarSample(Sampler0, vertexNormal, modelPosition, scale, time);
 
     vec3 baseColor = coreColor * starTex.r;

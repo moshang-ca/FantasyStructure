@@ -4,12 +4,12 @@ import com.lowdragmc.lowdraglib.side.fluid.FluidStack;
 import com.lowdragmc.lowdraglib.side.fluid.forge.FluidHelperImpl;
 import com.lowdragmc.lowdraglib.side.fluid.forge.FluidTransferHelperImpl;
 import com.lowdragmc.lowdraglib.syncdata.IManagedStorage;
+import com.lowdragmc.lowdraglib.syncdata.ISubscription;
 import com.lowdragmc.lowdraglib.syncdata.annotation.DescSynced;
 import com.lowdragmc.lowdraglib.syncdata.annotation.Persisted;
 import com.lowdragmc.lowdraglib.syncdata.blockentity.IRPCBlockEntity;
 import com.lowdragmc.lowdraglib.syncdata.field.FieldManagedStorage;
 import com.lowdragmc.lowdraglib.syncdata.field.ManagedFieldHolder;
-import com.mojang.logging.LogUtils;
 import lombok.Getter;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -39,8 +39,9 @@ import org.moshang.fantasystructure.block.container.BlockFluidBus;
 import org.moshang.fantasystructure.capability.handler.FluidRecipeHandler;
 import org.moshang.fantasystructure.capability.recipe.FluidRecipeCapability;
 import org.moshang.fantasystructure.registry.FSBlockEntities;
-import org.slf4j.Logger;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Predicate;
 
 public class BEFluidBus extends BlockEntity implements IBus, IRPCBlockEntity {
@@ -77,8 +78,8 @@ public class BEFluidBus extends BlockEntity implements IBus, IRPCBlockEntity {
     private final RecipeCapability<FluidIngredient> recipeCapability;
     @Getter
     private final IO io;
+    private final List<Runnable> contentChangedListeners = new ArrayList<>();
 
-    private static final Logger LOGGER = LogUtils.getLogger();
 
     public BEFluidBus(BlockEntityType<?> entityType, BlockPos pos, BlockState state) {
         super(entityType, pos, state);
@@ -179,5 +180,17 @@ public class BEFluidBus extends BlockEntity implements IBus, IRPCBlockEntity {
     public void invalidateCaps() {
         super.invalidateCaps();
         handler.invalidate();
+    }
+
+    @Override
+    public void setChanged() {
+        super.setChanged();
+        contentChangedListeners.forEach(Runnable::run);
+    }
+
+    @Override
+    public ISubscription addContentChangedListener(Runnable listener) {
+        contentChangedListeners.add(listener);
+        return () -> contentChangedListeners.remove(listener);
     }
 }

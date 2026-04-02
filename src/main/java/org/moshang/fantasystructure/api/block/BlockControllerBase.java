@@ -17,6 +17,7 @@ import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.material.PushReaction;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraftforge.network.NetworkHooks;
 import org.moshang.fantasystructure.api.blockentity.BlockEntityControllerBase;
@@ -34,25 +35,30 @@ import java.util.function.Supplier;
 @MethodsReturnNonnullByDefault
 public abstract class BlockControllerBase <T extends BlockEntityControllerBase> extends HorizontalDirectionalBlock implements EntityBlock {
     private final Supplier<BlockEntityType<T>> blockEntityTypeSupplier;
-    private final Supplier<ResourceLocation> patternIdSupplier;
+    private final Supplier<ResourceLocation> controllerIdSupplier;
 
     protected BlockControllerBase(int strength,
                                   Supplier<BlockEntityType<T>> blockEntityTypeSupplier,
-                                  Supplier<ResourceLocation> patternIdSupplier) {
+                                  Supplier<ResourceLocation> controllerIdSupplier) {
         super(Block.Properties.of()
-                        .strength(strength)
-                        .requiresCorrectToolForDrops()
+                .strength(strength)
+                .requiresCorrectToolForDrops()
         );
         this.registerDefaultState(this.stateDefinition.any()
                 .setValue(FACING, Direction.NORTH)
         );
         this.blockEntityTypeSupplier = blockEntityTypeSupplier;
-        this.patternIdSupplier = patternIdSupplier;
+        this.controllerIdSupplier = controllerIdSupplier;
     }
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
         builder.add(FACING);
+    }
+
+    @Override
+    public @Nullable PushReaction getPistonPushReaction(BlockState state) {
+        return PushReaction.BLOCK;
     }
 
     @Nullable
@@ -83,6 +89,14 @@ public abstract class BlockControllerBase <T extends BlockEntityControllerBase> 
         Direction direction = context.getHorizontalDirection().getOpposite();
         direction = context.getPlayer().isShiftKeyDown() ? direction.getOpposite() : direction;
         return this.defaultBlockState().setValue(FACING, direction);
+    }
+
+    @Override
+    public void onRemove(BlockState pState, Level pLevel, BlockPos pPos, BlockState pNewState, boolean pMovedByPiston) {
+        if(!pLevel.isClientSide && pLevel.getBlockEntity(pPos) instanceof BlockEntityControllerBase be) {
+            be.onDeformed();
+        }
+        super.onRemove(pState, pLevel, pPos, pNewState, pMovedByPiston);
     }
 
     @Override

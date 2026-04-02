@@ -1,6 +1,5 @@
 package org.moshang.fantasystructure.helper;
 
-import com.mojang.logging.LogUtils;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -8,7 +7,6 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.state.BlockState;
 import org.moshang.fantasystructure.data.BlockInfo;
-import org.slf4j.Logger;
 
 /**
  * Save structure pattern, using relative position.
@@ -17,8 +15,6 @@ import org.slf4j.Logger;
  * @param height
  */
 public record StructurePattern(Long2ObjectOpenHashMap<BlockInfo> blockPattern, BlockPos controllerPos, int height) {
-    private static final Logger LOGGER = LogUtils.getLogger();
-
     public static StructurePattern createRotated(Long2ObjectOpenHashMap<BlockInfo> pattern, BlockPos controllerPos,
                                                  Direction origin, Direction current, int height) {
         if(origin == current) {

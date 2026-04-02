@@ -25,13 +25,13 @@ public class BlockTestController extends BlockControllerBase<BETestController> i
         super(
                 strength,
                 FSBlockEntities.TEST_CONTROLLER_BE,
-                () -> new ResourceLocation(FantasyStructure.MODID, "test_structure")
+                () -> new ResourceLocation(FantasyStructure.MODID, "test_controller")
         );
     }
 
     @Override
     protected BETestController createBlockEntity(BlockPos pos, BlockState state) {
-        return new BETestController(getBlockEntityTypeSupplier().get(), pos, state, getPatternIdSupplier().get());
+        return new BETestController(getBlockEntityTypeSupplier().get(), pos, state, getControllerIdSupplier().get());
     }
 
     @Nullable

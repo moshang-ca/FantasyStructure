@@ -32,7 +32,7 @@ public class ControllerMenu extends BaseMenu {
 
         if(playerInv.player.level().getBlockEntity(pos) instanceof BlockEntityControllerBase be) {
             this.data.set(0, be.isFormed() ? 1 : 0);
-            this.structureID = be.getId();
+            this.structureID = be.getPatternId();
         } else {
             this.data.set(0, 0);
             this.structureID = new ResourceLocation("null_structure");

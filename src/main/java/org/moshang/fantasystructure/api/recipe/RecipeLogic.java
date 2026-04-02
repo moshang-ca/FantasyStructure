@@ -2,6 +2,7 @@ package org.moshang.fantasystructure.api.recipe;
 
 import com.lowdragmc.lowdraglib.Platform;
 import com.lowdragmc.lowdraglib.syncdata.IEnhancedManaged;
+import com.lowdragmc.lowdraglib.syncdata.ISubscription;
 import com.lowdragmc.lowdraglib.syncdata.annotation.DescSynced;
 import com.lowdragmc.lowdraglib.syncdata.annotation.Persisted;
 import com.lowdragmc.lowdraglib.syncdata.annotation.RequireRerender;
@@ -25,6 +26,8 @@ public class RecipeLogic implements IEnhancedManaged {
         IDLE, WORKING, SUSPEND
     }
 
+    private static final int MAX_FAILURE = 40;
+
     @Getter
     private final FieldManagedStorage syncStorage = new FieldManagedStorage(this);
     public static final ManagedFieldHolder MANAGED_FIELD_HOLDER = new ManagedFieldHolder(RecipeLogic.class);
@@ -34,6 +37,14 @@ public class RecipeLogic implements IEnhancedManaged {
 
     @Getter
     private final IMachine machine;
+    /**
+     * Listeners that will be called when the machine is woken up, used to notify the machine.
+     */
+    private final List<Runnable> wakeupListener = new ArrayList<>();
+
+    private int failures = 0;
+    private boolean isSleep = false;
+
     private List<FSRecipe> failedMatches;
     @Nullable @Getter @Setter @Persisted
     protected FSRecipe lastRecipe;
@@ -70,6 +81,7 @@ public class RecipeLogic implements IEnhancedManaged {
         return duration == 0 ? .0d : progress / (duration * 1.0);
     }
 
+    @SuppressWarnings("DataFlowIssue")
     public RecipeManager getRecipeManager() {
         return Platform.getMinecraftServer().getRecipeManager();
     }
@@ -101,7 +113,7 @@ public class RecipeLogic implements IEnhancedManaged {
                 }
             } else if (lastRecipe != null) {
                 findAndHandleRecipe();
-            } else if (getMachine().getOffsetTimer() % 5 == 0) {
+            } else if (!isSleep && getMachine().getOffsetTimer() % 5 == 0) {
                 findAndHandleRecipe();
                 if (failedMatches != null) {
                     for (var recipe : failedMatches) {
@@ -159,14 +171,17 @@ public class RecipeLogic implements IEnhancedManaged {
     }
 
     public void findAndHandleRecipe() {
+        if(isSleep) return;
+
         failedMatches = null;
+        boolean foundRecipe = false;
         if(!recipeDirty && lastRecipe != null &&
                 lastRecipe.matchRecipe(machine).isSuccess() &&
                 lastRecipe.matchTickRecipe(machine).isSuccess()) {         // Try last success recipe first.
             FSRecipe recipe = lastRecipe;
             lastRecipe = null;
             lastOriginalRecipe = null;
-            setupRecipe(recipe);
+            foundRecipe = setupRecipe(recipe);
         } else {
             lastRecipe = null;
             lastOriginalRecipe = null;
@@ -181,17 +196,22 @@ public class RecipeLogic implements IEnhancedManaged {
                                 .toList();
                         matches = matches.stream().filter(match -> match.matchRecipe(machine).isSuccess()).toList();
                         if(!matches.isEmpty()) {
-                            handleSearchingRecipe(matches);
+                            foundRecipe = handleSearchingRecipe(matches);
                         }
                     } catch (Throwable ex) {
                         ex.printStackTrace();
                         completableFuture = supplyAsyncSearchTask();
                     }
                 } else {
-                    handleSearchingRecipe(searchRecipe());
+                    foundRecipe = handleSearchingRecipe(searchRecipe());
                 }
             }
             recipeDirty = false;
+        }
+        if(foundRecipe) {
+            success();
+        } else {
+            failure();
         }
     }
 
@@ -199,24 +219,27 @@ public class RecipeLogic implements IEnhancedManaged {
         return CompletableFuture.supplyAsync(Util.wrapThreadWithTaskName("search recipe", this::searchRecipe), Util.backgroundExecutor());
     }
 
-    private void handleSearchingRecipe(List<FSRecipe> recipes) {
+    private boolean handleSearchingRecipe(List<FSRecipe> recipes) {
         for(var recipe : recipes) {
-            if(checkMatchedRecipeAvailable(recipe)) break;
+            if(checkMatchedRecipeAvailable(recipe)) return true;
             if(failedMatches == null) {
                 failedMatches = new ArrayList<>();
             }
             failedMatches.add(recipe);
         }
+        return false;
     }
 
-    public void setupRecipe(FSRecipe recipe) {
+    public boolean setupRecipe(FSRecipe recipe) {
         if(recipe.handleRecipeIO(IO.IN, machine)) {
             recipeDirty = false;
             lastRecipe = recipe;
             setStatus(Status.WORKING);
             progress = 0;
             duration = recipe.duration();
+            return true;
         }
+        return false;
     }
 
     public void interruptRecipe() {
@@ -294,5 +317,36 @@ public class RecipeLogic implements IEnhancedManaged {
 
     public boolean isSuspend() {
         return status == Status.SUSPEND;
+    }
+
+    public ISubscription addWakeupListener(Runnable runnable) {
+        wakeupListener.add(runnable);
+        return () -> wakeupListener.remove(runnable);
+    }
+
+    public void wakeUp() {
+        if(isSleep) {
+            isSleep = false;
+            failures = 0;
+            findAndHandleRecipe();
+        }
+    }
+
+    private void failure() {
+        failures++;
+        if(failures >= MAX_FAILURE) {
+            sleep();
+        }
+    }
+
+    private void success() {
+        failures = 0;
+        if(isSleep) {
+            isSleep = false;
+        }
+    }
+
+    private void sleep() {
+        isSleep = true;
     }
 }

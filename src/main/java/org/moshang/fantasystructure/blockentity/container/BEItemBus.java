@@ -1,6 +1,7 @@
 package org.moshang.fantasystructure.blockentity.container;
 
 import com.lowdragmc.lowdraglib.syncdata.IManagedStorage;
+import com.lowdragmc.lowdraglib.syncdata.ISubscription;
 import com.lowdragmc.lowdraglib.syncdata.annotation.Persisted;
 import com.lowdragmc.lowdraglib.syncdata.field.FieldManagedStorage;
 import com.lowdragmc.lowdraglib.syncdata.field.ManagedFieldHolder;
@@ -27,6 +28,9 @@ import org.moshang.fantasystructure.block.container.BlockItemBus;
 import org.moshang.fantasystructure.capability.handler.ItemSlotRecipeHandler;
 import org.moshang.fantasystructure.capability.recipe.ItemRecipeCapability;
 import org.moshang.fantasystructure.registry.FSBlockEntities;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class BEItemBus extends BlockEntity implements IBus {
     protected static final ManagedFieldHolder MANAGED_FIELD_HOLDER = new ManagedFieldHolder(BEItemBus.class);
@@ -61,11 +65,13 @@ public class BEItemBus extends BlockEntity implements IBus {
     private final IO io;
     @Getter
     private final RecipeCapability<Ingredient> recipeCapability;
+    private final List<Runnable> contentChangedListeners = new ArrayList<>();
 
     public BEItemBus(BlockEntityType<?> pType, BlockPos pPos, BlockState pBlockState) {
         super(pType, pPos, pBlockState);
         ComponentItemCapacity type = pBlockState.getValue(BlockItemBus.TYPE);
         this.itemHandler = createHandler(type.getSlots());
+        this.itemHandler.setOnContentsChanged(() -> contentChangedListeners.forEach(Runnable::run));
         this.handler = LazyOptional.of(() -> itemHandler);
 
         // For Recipe
@@ -90,19 +96,11 @@ public class BEItemBus extends BlockEntity implements IBus {
         };
     }
 
-//    @Override
-//    protected void saveAdditional(CompoundTag tag) {
-//        super.saveAdditional(tag);
-//        tag.put("ItemHandler", itemHandler.serializeNBT());
-//    }
-//
-//    @Override
-//    public void load(CompoundTag tag) {
-//        super.load(tag);
-//        if(tag.contains("ItemHandler")) {
-//            itemHandler.deserializeNBT(tag.getCompound("ItemHandler"));
-//        }
-//    }
+    @Override
+    public ISubscription addContentChangedListener(Runnable listener) {
+        contentChangedListeners.add(listener);
+        return () -> contentChangedListeners.remove(listener);
+    }
 
     @Override
     public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {

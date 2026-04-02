@@ -11,6 +11,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import org.jetbrains.annotations.NotNull;
+import org.moshang.fantasystructure.api.blockentity.RendererBlockEntity;
 
 import java.util.Collections;
 import java.util.Set;
@@ -65,6 +66,7 @@ public class BlockInfo {
     public boolean matches(Level level, BlockPos pos) {
         BlockState state = level.getBlockState(pos);
         if(state.equals(expectedState)) return true;
+        if(level.getBlockEntity(pos) instanceof RendererBlockEntity) return true;
 
         if(!allowedTags.isEmpty()) {
             for(TagKey<Block> tag : allowedTags) {
@@ -74,7 +76,6 @@ public class BlockInfo {
                     }
                 }
             }
-            return false;
         }
         return false;
     }

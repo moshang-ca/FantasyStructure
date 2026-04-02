@@ -1,31 +1,18 @@
 package org.moshang.fantasystructure;
 
 import com.mojang.logging.LogUtils;
-import net.minecraft.client.gui.screens.MenuScreens;
-import net.minecraft.client.renderer.blockentity.BlockEntityRenderers;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.RegisterShadersEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.crafting.CraftingHelper;
 import net.minecraftforge.event.RegisterCommandsEvent;
-import net.minecraftforge.event.server.ServerStartingEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.config.ModConfig;
-import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.fml.loading.FMLPaths;
 import org.moshang.fantasystructure.api.recipe.ingredient.SizedIngredient;
-import org.moshang.fantasystructure.client.render.ShaderLoader;
-import org.moshang.fantasystructure.client.render.StarCoreRenderer;
-import org.moshang.fantasystructure.client.screen.ControllerScreen;
-import org.moshang.fantasystructure.client.screen.EnergyBusScreen;
-import org.moshang.fantasystructure.client.screen.FluidBusScreen;
-import org.moshang.fantasystructure.client.screen.ItemBusScreen;
 import org.moshang.fantasystructure.command.Command;
 import org.moshang.fantasystructure.helper.blueprint.BlueprintEditor;
 import org.moshang.fantasystructure.helper.blueprint.BlueprintManager;
@@ -78,36 +65,11 @@ public class FantasyStructure {
         FSStructureDefinitions.init();
     }
 
-    @SubscribeEvent
-    public void onServerStarting(ServerStartingEvent event) {
-    }
-
     public void commandRegister(RegisterCommandsEvent event) {
         Command.register(event.getDispatcher());
     }
 
     public static ResourceLocation id(String path) {
         return new ResourceLocation(MODID, path);
-    }
-
-    @Mod.EventBusSubscriber(modid = MODID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
-    public static class ClientModEvents {
-
-        @SubscribeEvent
-        public static void onClientSetup(FMLClientSetupEvent event) {
-            event.enqueueWork(() -> {
-                MenuScreens.register(FSMenuType.CONTROLLER_MENU_TYPE.get(), ControllerScreen::new);
-                MenuScreens.register(FSMenuType.ITEM_BUS_MENU_TYPE.get(), ItemBusScreen::new);
-                MenuScreens.register(FSMenuType.ENERGY_BUS_MENU_TYPE.get(), EnergyBusScreen::new);
-                MenuScreens.register(FSMenuType.FLUID_BUS_MENU_TYPE.get(), FluidBusScreen::new);
-
-                BlockEntityRenderers.register(FSBlockEntities.STAR_CORE_BE.get(), StarCoreRenderer::new);
-            });
-        }
-
-        @SubscribeEvent
-        public static void onRegisterShaders(RegisterShadersEvent event) {
-            ShaderLoader.loadShaders("star_core", event.getResourceProvider());
-        }
     }
 }

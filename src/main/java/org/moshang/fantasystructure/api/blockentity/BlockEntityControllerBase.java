@@ -4,6 +4,7 @@ import com.google.common.collect.Table;
 import com.google.common.collect.Tables;
 import com.lowdragmc.lowdraglib.syncdata.IEnhancedManaged;
 import com.lowdragmc.lowdraglib.syncdata.IManagedStorage;
+import com.lowdragmc.lowdraglib.syncdata.ISubscription;
 import com.lowdragmc.lowdraglib.syncdata.annotation.DescSynced;
 import com.lowdragmc.lowdraglib.syncdata.annotation.Persisted;
 import com.lowdragmc.lowdraglib.syncdata.annotation.RPCMethod;
@@ -38,6 +39,7 @@ import org.moshang.fantasystructure.data.save.StructureWorldSavedData;
 import org.moshang.fantasystructure.helper.StructurePattern;
 import org.moshang.fantasystructure.helper.blueprint.BlueprintManager;
 import org.moshang.fantasystructure.helper.builder.StructureBuilderManager;
+import org.moshang.fantasystructure.registry.FSStructureDefinitions;
 import org.slf4j.Logger;
 
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -47,8 +49,8 @@ import java.util.concurrent.CompletableFuture;
 @ParametersAreNonnullByDefault
 @MethodsReturnNonnullByDefault
 public abstract class BlockEntityControllerBase extends BlockEntity implements IMachine, IEnhancedManaged, IRPCBlockEntity, IAutoSyncBlockEntity, IAutoPersistBlockEntity {
-    private static final ManagedFieldHolder MANAGED_FIELD_HOLDER = new ManagedFieldHolder(BlockEntityControllerBase.class);
-    private final FieldManagedStorage syncStorage = new FieldManagedStorage(this);
+    protected static final ManagedFieldHolder MANAGED_FIELD_HOLDER = new ManagedFieldHolder(BlockEntityControllerBase.class);
+    protected final FieldManagedStorage syncStorage = new FieldManagedStorage(this);
 
     @Override
     public ManagedFieldHolder getFieldHolder() {
@@ -78,7 +80,7 @@ public abstract class BlockEntityControllerBase extends BlockEntity implements I
     private StructurePattern pattern;
     private CompletableFuture<StructurePattern> patternFuture;
     @Getter @DescSynced
-    private final ResourceLocation id;
+    private final FSStructureDefinitions.StructureDefinition definition;
     private StructureState structureState;
 
     @Getter
@@ -86,16 +88,20 @@ public abstract class BlockEntityControllerBase extends BlockEntity implements I
     @Persisted
     private final RecipeLogic recipeLogic;
     private final Table<IO, RecipeCapability<?>, List<IRecipeHandler<?>>> recipeCapabilityProxies;
+    private final List<ISubscription> busSubscriptions = new ArrayList<>();
 
     private static final Logger LOGGER = LogUtils.getLogger();
 
     @SuppressWarnings({"UnstableApiUsage"})
     public BlockEntityControllerBase(BlockEntityType<?> entityType,
-                                     BlockPos pos, BlockState state,
-                                     ResourceLocation patternId) {
+                                     BlockPos pos, BlockState state, ResourceLocation controllerId) {
         super(entityType, pos, state);
         this.recipeLogic = createRecipeLogic();
-        this.id = patternId;
+        this.definition = FSStructureDefinitions.DEFINITIONS.get(controllerId);
+        if(this.definition == null) {
+            LOGGER.error("Controller {} has no definition", controllerId);
+            FSStructureDefinitions.DEFINITIONS.forEach((definition) -> LOGGER.info("{}: {}", controllerId, definition.patternId()));
+        }
         this.recipeCapabilityProxies = Tables.newCustomTable(new EnumMap<>(IO.class), HashMap::new);
     }
 
@@ -120,6 +126,9 @@ public abstract class BlockEntityControllerBase extends BlockEntity implements I
             var savedData = StructureWorldSavedData.getOrCreate(serverLevel);
             savedData.removeStructure(worldPosition);
         }
+        busSubscriptions.forEach(ISubscription::unsubscribe);
+        busSubscriptions.clear();
+
         super.setRemoved();
     }
 
@@ -133,8 +142,9 @@ public abstract class BlockEntityControllerBase extends BlockEntity implements I
             if(wasFormed != isValid) {
                 setFormed(isValid);
                 if(isValid) {
-                    resetRecipeCapabilityProxies();
+                    onFormed();
                 } else {
+                    onDeformed();
                     recipeCapabilityProxies.clear();
                 }
             }
@@ -170,10 +180,10 @@ public abstract class BlockEntityControllerBase extends BlockEntity implements I
         if (pattern == null && getLevel() != null && !getLevel().isClientSide) {
             var facing = getBlockState().getValue(BlockStateProperties.HORIZONTAL_FACING);
             this.patternFuture = CompletableFuture.supplyAsync(
-                    Util.wrapThreadWithTaskName("init pattern", () -> BlueprintManager.getPattern(id, facing)),
+                    Util.wrapThreadWithTaskName("init pattern", () -> BlueprintManager.getPattern(definition.patternId(), facing)),
                             Util.backgroundExecutor())
                     .exceptionally(throwable -> {
-                        LOGGER.error("Failed load pattern for {}: {}", id, throwable);
+                        LOGGER.error("Failed load pattern for {}: {}", definition.patternId(), throwable);
                         return null;
                     });
         }
@@ -187,15 +197,22 @@ public abstract class BlockEntityControllerBase extends BlockEntity implements I
             boolean isValid = structureState.tickCheck(level);
             setFormed(isValid);
             if (isValid) {
-                resetRecipeCapabilityProxies();
+                onFormed();
+
             }
         }
     }
 
-    public void onRotate() {
-        initPattern();
-        setChanged();
+//    public void onRotate() {
+//        initPattern();
+//        setChanged();
+//    }
+
+    public void onFormed() {
+        resetRecipeCapabilityProxies();
     }
+
+    public void onDeformed() {}
 
     public void autoBuild(ItemStack builderStack, boolean isCreative) {
         if(pattern == null) initPattern();
@@ -254,21 +271,32 @@ public abstract class BlockEntityControllerBase extends BlockEntity implements I
 
     private void resetRecipeCapabilityProxies() {
         recipeCapabilityProxies.clear();
+        busSubscriptions.forEach(ISubscription::unsubscribe);
+        busSubscriptions.clear();
+
         for(var bus : structureState.getCollectedBuses()) {
             if(!recipeCapabilityProxies.contains(bus.getIo(), bus.getRecipeCapability())) {
                 recipeCapabilityProxies.put(bus.getIo(), bus.getRecipeCapability(), new ArrayList<>());
             }
             //noinspection DataFlowIssue
             recipeCapabilityProxies.get(bus.getIo(), bus.getRecipeCapability()).add(bus.getRecipeHandler());
-            System.out.println("handler " + bus.getRecipeHandler());
+
+            var subscription = bus.addContentChangedListener(recipeLogic::wakeUp);
+            if(subscription != null) {
+                busSubscriptions.add(subscription);
+            }
         }
     }
 
     public StructurePattern getPattern() {
-        if(level.isClientSide) {
-            return BlueprintManager.getPattern(id, getFrontFacing().orElse(Direction.NORTH));
+        if(level != null && level.isClientSide) {
+            return BlueprintManager.getPattern(definition.patternId(), getFrontFacing().orElse(Direction.NORTH));
         } else {
             return pattern;
         }
+    }
+
+    public ResourceLocation getPatternId() {
+        return definition.patternId();
     }
 }

@@ -1,8 +1,8 @@
 package org.moshang.fantasystructure.api.block;
 
+import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
@@ -13,12 +13,15 @@ import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
-import net.minecraft.world.level.material.FluidState;
-import org.jetbrains.annotations.NotNull;
+import net.minecraft.world.level.material.PushReaction;
 import org.jetbrains.annotations.Nullable;
 import org.moshang.fantasystructure.api.blockentity.IBus;
 import org.moshang.fantasystructure.api.capability.recipe.IO;
 
+import javax.annotation.ParametersAreNonnullByDefault;
+
+@ParametersAreNonnullByDefault
+@MethodsReturnNonnullByDefault
 public abstract class BlockBusBase<T extends BlockEntity & IBus> extends HorizontalDirectionalBlock implements EntityBlock {
     public static final EnumProperty<IO> IO_TYPE = EnumProperty.create("io_type", IO.class);
 
@@ -32,7 +35,7 @@ public abstract class BlockBusBase<T extends BlockEntity & IBus> extends Horizon
     }
 
     @Override
-    public @Nullable BlockEntity newBlockEntity(@NotNull BlockPos pPos, @NotNull BlockState pState) {
+    public @Nullable BlockEntity newBlockEntity( BlockPos pPos, BlockState pState) {
         try {
             return createBlockEntity(pPos, pState);
         }catch (Exception e) {
@@ -45,6 +48,11 @@ public abstract class BlockBusBase<T extends BlockEntity & IBus> extends Horizon
         pBuilder.add(IO_TYPE, FACING);
     }
 
+    @Override
+    public @Nullable PushReaction getPistonPushReaction(BlockState state) {
+        return PushReaction.BLOCK;
+    }
+
     @Nullable
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext context) {
@@ -54,9 +62,10 @@ public abstract class BlockBusBase<T extends BlockEntity & IBus> extends Horizon
     }
 
     @Override
-    public boolean onDestroyedByPlayer(BlockState state, Level level, BlockPos pos, Player player, boolean willHarvest, FluidState fluid) {
-        dropContainerItems(level, pos);
-        return super.onDestroyedByPlayer(state, level, pos, player, willHarvest, fluid);
+    @SuppressWarnings("deprecation")
+    public void onRemove(BlockState pState, Level pLevel, BlockPos pPos, BlockState pNewState, boolean pMovedByPiston) {
+        dropContainerItems(pLevel, pPos);
+        super.onRemove(pState, pLevel, pPos, pNewState, pMovedByPiston);
     }
 
     protected abstract T createBlockEntity(BlockPos pPos, BlockState pState);

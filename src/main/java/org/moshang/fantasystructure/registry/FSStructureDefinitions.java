@@ -1,18 +1,17 @@
 package org.moshang.fantasystructure.registry;
 
+import com.lowdragmc.lowdraglib.syncdata.payload.FriendlyBufPayload;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import org.moshang.fantasystructure.FantasyStructure;
 import org.moshang.fantasystructure.api.recipe.FSRecipeType;
-import org.moshang.fantasystructure.helper.blueprint.BlueprintManager;
 import org.moshang.fantasystructure.registry.recipe.FSRecipeRegistry;
 import org.moshang.fantasystructure.registry.recipe.FSRecipes;
 import org.moshang.fantasystructure.util.SlotUtil;
 
 import java.util.List;
-import java.util.Map;
 
 public class FSStructureDefinitions {
     public static final FSRecipeRegistry.RL<StructureDefinition> DEFINITIONS = new FSRecipeRegistry.RL<>(FantasyStructure.id("structure_definitions"));
@@ -39,8 +38,18 @@ public class FSStructureDefinitions {
             this.recipeType = recipeType;
         }
 
+        public StructureDefinition(ResourceLocation patternId, ResourceLocation recipeTypeId) {
+            this.patternId = patternId;
+            this.recipeType = FSRecipes.RECIPE_TYPES.get(recipeTypeId);
+        }
+
         public List<ItemStack> getMaterials() {
             return SlotUtil.getItemByDefinition(this);
+        }
+
+        public static StructureDefinition fromNetwork(FriendlyBufPayload buffer) {
+            var payload = buffer.getPayload();
+            return new StructureDefinition(payload.readResourceLocation(), payload.readResourceLocation());
         }
     }
 }

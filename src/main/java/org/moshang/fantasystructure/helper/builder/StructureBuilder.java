@@ -1,12 +1,9 @@
 package org.moshang.fantasystructure.helper.builder;
 
-import com.mojang.logging.LogUtils;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import lombok.Getter;
 import net.minecraft.core.BlockPos;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
@@ -15,16 +12,10 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.common.util.LazyOptional;
-import net.minecraftforge.fluids.capability.IFluidHandlerItem;
-import net.minecraftforge.registries.ForgeRegistries;
 import org.moshang.fantasystructure.Config;
 import org.moshang.fantasystructure.data.BlockInfo;
-import org.moshang.fantasystructure.data.save.StructureWorldSavedData;
 import org.moshang.fantasystructure.helper.StructurePattern;
 import org.moshang.fantasystructure.item.ItemAutoBuilder;
-import org.slf4j.Logger;
 
 import java.util.*;
 
@@ -42,7 +33,6 @@ public class StructureBuilder {
     private boolean isCreative = false;
 
     private static final int BLOCKS_PER_TICK = Config.MAX_BLOCK_PLACE_PER_TICK.get();
-    private static final Logger LOGGER = LogUtils.getLogger();
 
     public StructureBuilder(Level level, BlockPos center, StructurePattern pattern, ItemStack builderStack) {
         this.level = level;
@@ -75,13 +65,10 @@ public class StructureBuilder {
         while(!taskQueue.isEmpty() && placed < BLOCKS_PER_TICK) {
             var entry = taskQueue.poll();
             BlockInfo blockInfo = entry.getValue();
-            BlockPos worldPos = center.offset(BlockPos.of(entry.getLongKey()));
             BlockState targetState = blockInfo.getExpectedState();
+            if(targetState.isAir()) continue;
+            BlockPos worldPos = center.offset(BlockPos.of(entry.getLongKey()));
             Set<TagKey<Block>> blockTagKeys = blockInfo.getAllowedTags();
-
-            if(targetState.isAir()) {
-                continue;
-            }
 
             BlockState state = level.getBlockState(worldPos);
             if(!state.isAir()) {
