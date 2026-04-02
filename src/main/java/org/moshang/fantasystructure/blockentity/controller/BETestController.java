@@ -6,14 +6,14 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import org.moshang.fantasystructure.FantasyStructure;
-import org.moshang.fantasystructure.api.blockentity.BlockEntityControllerBase;
+import org.moshang.fantasystructure.api.blockentity.BlockEntityAbstractRecipeController;
 import org.moshang.fantasystructure.api.recipe.FSRecipeType;
 import org.moshang.fantasystructure.block.controller.BlockTestController;
 import org.moshang.fantasystructure.registry.FSBlockEntities;
 import org.moshang.fantasystructure.registry.FSBlocks;
 
 @SuppressWarnings("removal")
-public class BETestController extends BlockEntityControllerBase {
+public class BETestController extends BlockEntityAbstractRecipeController {
     private static final Vec3i renderCenter = new Vec3i(10, 15, 5);
 
     public BETestController(BlockPos pos, BlockState state) {
@@ -54,6 +54,7 @@ public class BETestController extends BlockEntityControllerBase {
 
     @Override
     public void onDeformed() {
+        super.onDeformed();
         if(level != null && !level.isClientSide) {
             level.removeBlock(worldPosition.offset(getRenderCenter()), false);
         }

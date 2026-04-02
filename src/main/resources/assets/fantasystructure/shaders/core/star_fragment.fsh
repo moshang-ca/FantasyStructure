@@ -7,7 +7,6 @@ uniform vec3 edgeColor;
 //uniform float brightness;
 //uniform vec2 resolution;
 
-in vec2 texCoord;
 in vec3 modelPosition;
 in vec3 viewDirection;
 in vec3 vertexNormal;

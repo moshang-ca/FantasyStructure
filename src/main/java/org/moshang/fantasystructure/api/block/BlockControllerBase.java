@@ -20,7 +20,7 @@ import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.material.PushReaction;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraftforge.network.NetworkHooks;
-import org.moshang.fantasystructure.api.blockentity.BlockEntityControllerBase;
+import org.moshang.fantasystructure.api.blockentity.BlockEntityAbstractController;
 import org.moshang.fantasystructure.client.render.StructurePreviewRenderer;
 import org.moshang.fantasystructure.menu.ControllerMenu;
 import org.moshang.fantasystructure.menu.menuprovider.BlockMenuProvider;
@@ -33,7 +33,7 @@ import java.util.function.Supplier;
 @SuppressWarnings("deprecation")
 @ParametersAreNonnullByDefault
 @MethodsReturnNonnullByDefault
-public abstract class BlockControllerBase <T extends BlockEntityControllerBase> extends HorizontalDirectionalBlock implements EntityBlock {
+public abstract class BlockControllerBase <T extends BlockEntityAbstractController> extends HorizontalDirectionalBlock implements EntityBlock {
     private final Supplier<BlockEntityType<T>> blockEntityTypeSupplier;
     private final Supplier<ResourceLocation> controllerIdSupplier;
 
@@ -77,7 +77,7 @@ public abstract class BlockControllerBase <T extends BlockEntityControllerBase> 
     @Override
     public  <E extends BlockEntity> BlockEntityTicker<E> getTicker(Level level, BlockState state, BlockEntityType<E> entityType) {
         return level.isClientSide ? null : (lvl, pos, st, be) -> {
-            if(be instanceof BlockEntityControllerBase controller) {
+            if(be instanceof BlockEntityAbstractController controller) {
                 controller.serverTick();
             }
         };
@@ -93,7 +93,7 @@ public abstract class BlockControllerBase <T extends BlockEntityControllerBase> 
 
     @Override
     public void onRemove(BlockState pState, Level pLevel, BlockPos pPos, BlockState pNewState, boolean pMovedByPiston) {
-        if(!pLevel.isClientSide && pLevel.getBlockEntity(pPos) instanceof BlockEntityControllerBase be) {
+        if(!pLevel.isClientSide && pLevel.getBlockEntity(pPos) instanceof BlockEntityAbstractController be) {
             be.onDeformed();
         }
         super.onRemove(pState, pLevel, pPos, pNewState, pMovedByPiston);
@@ -103,7 +103,7 @@ public abstract class BlockControllerBase <T extends BlockEntityControllerBase> 
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hitResult) {
         if(player.isShiftKeyDown()) {
             if (level.isClientSide) {
-                if (level.getBlockEntity(pos) instanceof BlockEntityControllerBase controller) {
+                if (level.getBlockEntity(pos) instanceof BlockEntityAbstractController controller) {
                     StructurePreviewRenderer.showPreview(pos, controller, 200);
                 }
             }
@@ -111,7 +111,7 @@ public abstract class BlockControllerBase <T extends BlockEntityControllerBase> 
         }
         if(!level.isClientSide && player instanceof ServerPlayer serverPlayer) {
             BlockEntity be = level.getBlockEntity(pos);
-            if(be instanceof BlockEntityControllerBase controller) {
+            if(be instanceof BlockEntityAbstractController controller) {
                 NetworkHooks.openScreen(serverPlayer, new BlockMenuProvider(controller, ControllerMenu.class), buf -> buf.writeBlockPos(pos));
                 return InteractionResult.CONSUME;
             }

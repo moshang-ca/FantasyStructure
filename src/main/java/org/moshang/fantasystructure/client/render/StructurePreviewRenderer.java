@@ -28,7 +28,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.opengl.GL11;
-import org.moshang.fantasystructure.api.blockentity.BlockEntityControllerBase;
+import org.moshang.fantasystructure.api.blockentity.BlockEntityAbstractController;
 import org.moshang.fantasystructure.data.BlockInfo;
 import org.moshang.fantasystructure.util.PreviewDummyWorld;
 
@@ -100,7 +100,7 @@ public class StructurePreviewRenderer {
      * @param controller the controller
      * @param duration the ticks of preview's duration
      */
-    public static void showPreview(BlockPos controllerPos, BlockEntityControllerBase controller, int duration) {
+    public static void showPreview(BlockPos controllerPos, BlockEntityAbstractController controller, int duration) {
         RENDER = true;
 
         LEVEL = new PreviewDummyWorld();

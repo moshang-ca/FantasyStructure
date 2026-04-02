@@ -13,7 +13,7 @@ import lombok.Setter;
 import net.minecraft.Util;
 import net.minecraft.world.item.crafting.RecipeManager;
 import org.jetbrains.annotations.Nullable;
-import org.moshang.fantasystructure.api.blockentity.IMachine;
+import org.moshang.fantasystructure.api.blockentity.IRecipeMachine;
 import org.moshang.fantasystructure.api.capability.recipe.IO;
 
 import java.util.ArrayList;
@@ -36,7 +36,7 @@ public class RecipeLogic implements IEnhancedManaged {
     private Status status = Status.IDLE;
 
     @Getter
-    private final IMachine machine;
+    private final IRecipeMachine machine;
     /**
      * Listeners that will be called when the machine is woken up, used to notify the machine.
      */
@@ -62,7 +62,7 @@ public class RecipeLogic implements IEnhancedManaged {
     @Nullable
     protected CompletableFuture<List<FSRecipe>> completableFuture = null;
 
-    public RecipeLogic(IMachine machine, boolean formed) {
+    public RecipeLogic(IRecipeMachine machine, boolean formed) {
         this.machine = machine;
         setStatus(formed);
     }

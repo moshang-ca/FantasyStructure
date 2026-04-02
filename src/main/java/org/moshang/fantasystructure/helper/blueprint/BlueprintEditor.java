@@ -7,7 +7,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluids;
 import org.moshang.fantasystructure.Config;
-import org.moshang.fantasystructure.api.blockentity.BlockEntityControllerBase;
+import org.moshang.fantasystructure.api.blockentity.BlockEntityAbstractController;
 import org.slf4j.Logger;
 
 import java.io.FileOutputStream;
@@ -180,7 +180,7 @@ public class BlueprintEditor {
                     BlockEntity be = level.getBlockEntity(worldPos);
 
                     if(!hasController) {
-                        if(be instanceof BlockEntityControllerBase) {
+                        if(be instanceof BlockEntityAbstractController) {
                             controllerPos = worldPos;
                             hasController = true;
                         }

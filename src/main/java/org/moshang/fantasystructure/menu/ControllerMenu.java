@@ -12,7 +12,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.moshang.fantasystructure.api.blockentity.BlockEntityControllerBase;
+import org.moshang.fantasystructure.api.blockentity.BlockEntityAbstractController;
 import org.moshang.fantasystructure.registry.FSMenuType;
 
 @SuppressWarnings("removal")
@@ -30,7 +30,7 @@ public class ControllerMenu extends BaseMenu {
         this.level = playerInv.player.level();
         this.pos = pos;
 
-        if(playerInv.player.level().getBlockEntity(pos) instanceof BlockEntityControllerBase be) {
+        if(playerInv.player.level().getBlockEntity(pos) instanceof BlockEntityAbstractController be) {
             this.data.set(0, be.isFormed() ? 1 : 0);
             this.structureID = be.getPatternId();
         } else {
@@ -75,7 +75,7 @@ public class ControllerMenu extends BaseMenu {
     }
 
     public static ControllerMenu createForServer(int pContainerId, Inventory playerInv, BlockEntity blockEntity) {
-        if(blockEntity instanceof BlockEntityControllerBase controller)
+        if(blockEntity instanceof BlockEntityAbstractController controller)
             return new ControllerMenu(
                     FSMenuType.CONTROLLER_MENU_TYPE.get(),
                     pContainerId, playerInv,
@@ -92,7 +92,7 @@ public class ControllerMenu extends BaseMenu {
     public void broadcastChanges() {
         super.broadcastChanges();
 
-        if(level.getBlockEntity(pos) instanceof BlockEntityControllerBase controller) {
+        if(level.getBlockEntity(pos) instanceof BlockEntityAbstractController controller) {
             if(controller.isFormed() == this.isFormed()) return;
             this.data.set(0, controller.isFormed() ? 1 : 0);
         }

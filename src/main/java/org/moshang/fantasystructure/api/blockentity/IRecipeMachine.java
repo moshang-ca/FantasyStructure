@@ -18,7 +18,7 @@ import java.util.Optional;
 /**
  * Any controller must implement this to have capability of handling recipes
  */
-public interface IMachine extends IRecipeCapabilityHolder {
+public interface IRecipeMachine extends IRecipeCapabilityHolder {
     BlockEntity getHolder();
     Optional<Direction> getFrontFacing();
     FSRecipeType getRecipeType();

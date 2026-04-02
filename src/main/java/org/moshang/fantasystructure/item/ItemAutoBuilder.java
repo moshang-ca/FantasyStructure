@@ -4,7 +4,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -28,10 +27,8 @@ import net.minecraftforge.fluids.FluidUtil;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandlerItem;
 import net.minecraftforge.items.IItemHandler;
-import net.minecraftforge.registries.ForgeRegistries;
-import org.jetbrains.annotations.Nullable;
 import org.moshang.fantasystructure.FantasyStructure;
-import org.moshang.fantasystructure.api.blockentity.BlockEntityControllerBase;
+import org.moshang.fantasystructure.api.blockentity.BlockEntityAbstractController;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -71,7 +68,7 @@ public class ItemAutoBuilder extends Item {
         BlockPos useOnPos = context.getClickedPos();
         BlockEntity blockEntity = level.getBlockEntity(useOnPos);
 
-        if (blockEntity instanceof BlockEntityControllerBase controller) {
+        if (blockEntity instanceof BlockEntityAbstractController controller) {
             controller.autoBuild(stack, context.getPlayer().isCreative());
             return InteractionResult.SUCCESS;
         }
