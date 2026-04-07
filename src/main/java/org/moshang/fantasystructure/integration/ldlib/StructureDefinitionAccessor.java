@@ -25,8 +25,7 @@ public class StructureDefinitionAccessor extends CustomObjectAccessor<FSStructur
     @Override
     public ITypedPayload<?> serialize(AccessorOp op, FSStructureDefinitions.StructureDefinition value) {
         FriendlyByteBuf holder = new FriendlyByteBuf(Unpooled.buffer());
-        holder.writeResourceLocation(value.patternId());
-        holder.writeResourceLocation(value.recipeType().getRegistryName());
+        value.toNetwork(holder);
         return FriendlyBufPayload.of(holder);
     }
 }

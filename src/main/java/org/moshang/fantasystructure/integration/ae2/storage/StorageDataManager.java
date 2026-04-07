@@ -2,7 +2,6 @@ package org.moshang.fantasystructure.integration.ae2.storage;
 
 import appeng.api.stacks.AEKey;
 import com.google.gson.*;
-import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.storage.LevelResource;
@@ -22,16 +21,14 @@ public class StorageDataManager {
     private static final String DATA_FOLDER = "multiblock_storage";
     private static final String FILE_EXTENSION = ".dat";
     private static final String BACKUP_EXTENSION = ".dat.bak";
-    private static final Map<UUID, StorageData> loadedStorage = new HashMap<>();
+    private static final Map<UUID, StorageData> loadedStorages = new HashMap<>();
     private static final Gson GSON = new GsonBuilder()
             .setPrettyPrinting()
             .create();
 
     private static Path storageRoot;
-    private static HolderLookup.Provider registries;
 
-    public static void init(ServerLevel level, HolderLookup.Provider registries) {
-        StorageDataManager.registries = registries;
+    public static void init(ServerLevel level) {
         Path worldRoot = level.getServer().getWorldPath(LevelResource.ROOT);
         storageRoot = worldRoot.resolve(DATA_FOLDER);
         try {
@@ -43,19 +40,41 @@ public class StorageDataManager {
 
 
     public static StorageData getOrLoad(UUID uuid) {
-        return loadedStorage.computeIfAbsent(uuid, id -> {
+        return loadedStorages.computeIfAbsent(uuid, id -> {
             Path path = getStoragePath(uuid);
             return loadFromFile(path, uuid);
         });
     }
 
     public static void save(UUID uuid) {
-        StorageData data = loadedStorage.get(uuid);
+        StorageData data = loadedStorages.get(uuid);
         if (data != null && data.isDirty()) {
             Path path = getStoragePath(uuid);
             saveToFile(path, data);
             data.setDirty(false);
         }
+    }
+
+    public static void saveAll() {
+        for(var entry : loadedStorages.entrySet()) {
+            var data = entry.getValue();
+            if(data.isDirty()) {
+                save(data.getId());
+            }
+        }
+    }
+
+    public static void unload(UUID uuid) {
+        var data = loadedStorages.get(uuid);
+        if(data != null && data.isDirty()) {
+            save(uuid);
+        }
+    }
+
+    public static void clear() {
+        saveAll();
+        loadedStorages.clear();
+        storageRoot = null;
     }
 
     private static Path getStoragePath(UUID uuid) {

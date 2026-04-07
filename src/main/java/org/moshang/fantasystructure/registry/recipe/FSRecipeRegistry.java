@@ -3,10 +3,6 @@ package org.moshang.fantasystructure.registry.recipe;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 import lombok.Getter;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.StringTag;
-import net.minecraft.nbt.Tag;
-import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.NotNull;
 import org.moshang.fantasystructure.FantasyStructure;
@@ -105,6 +101,7 @@ public abstract class FSRecipeRegistry<K, V> implements Iterable<V> {
         }
 
         public V get(java.lang.String id) {
+            if(id == null) return null;
             return this.registry.get(FantasyStructure.id(id));
         }
     }

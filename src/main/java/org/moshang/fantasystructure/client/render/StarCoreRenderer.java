@@ -25,10 +25,12 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static org.moshang.fantasystructure.blockentity.BEStarCore.Radius;
+
 @OnlyIn(Dist.CLIENT)
 public class StarCoreRenderer implements BlockEntityRenderer<BEStarCore> {
     private static final ResourceLocation STAR_TEXTURE = FantasyStructure.id("textures/entity/star_core.png");
-    private static final float SIZE = 10.f;
+
     private final static AtomicBoolean initialized = new AtomicBoolean(false);
 
     // VBO
@@ -52,7 +54,7 @@ public class StarCoreRenderer implements BlockEntityRenderer<BEStarCore> {
             try {
                 List<Geometry.Vertex> vertices = CACHE.get();
                 if(vertices == null) {
-                    vertices = Geometry.icosphere(SIZE / 2.f, 3);
+                    vertices = Geometry.icosphere(Radius, 3);
                     CACHE.set(vertices);
                 }
                 return vertices;

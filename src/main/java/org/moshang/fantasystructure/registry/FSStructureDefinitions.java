@@ -3,8 +3,10 @@ package org.moshang.fantasystructure.registry;
 import com.lowdragmc.lowdraglib.syncdata.payload.FriendlyBufPayload;
 import lombok.Getter;
 import lombok.experimental.Accessors;
+import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
+import org.jetbrains.annotations.Nullable;
 import org.moshang.fantasystructure.FantasyStructure;
 import org.moshang.fantasystructure.api.recipe.FSRecipeType;
 import org.moshang.fantasystructure.registry.recipe.FSRecipeRegistry;
@@ -15,11 +17,11 @@ import java.util.List;
 
 public class FSStructureDefinitions {
     public static final FSRecipeRegistry.RL<StructureDefinition> DEFINITIONS = new FSRecipeRegistry.RL<>(FantasyStructure.id("structure_definitions"));
-    // Another implementation: use pattern id as key and other as value (as definition)
 
     public static void init() {
         DEFINITIONS.unfreeze();
         register("test_controller", "test_structure", "stellar_simulacrum");
+        register("ae_storage_controller", "ae_storage_structure", null);
         DEFINITIONS.freeze();
     }
 
@@ -30,17 +32,25 @@ public class FSStructureDefinitions {
     @Getter
     @Accessors(fluent = true)
     public static class StructureDefinition {
-        private final FSRecipeType recipeType;
+        @Nullable private final FSRecipeType recipeType;
         private final ResourceLocation patternId;
+        private final boolean hasRecipeType;
 
-        public StructureDefinition(ResourceLocation patternId, FSRecipeType recipeType) {
+        public StructureDefinition(ResourceLocation patternId, @Nullable FSRecipeType recipeType) {
             this.patternId = patternId;
             this.recipeType = recipeType;
+            this.hasRecipeType = recipeType != null;
         }
 
         public StructureDefinition(ResourceLocation patternId, ResourceLocation recipeTypeId) {
             this.patternId = patternId;
-            this.recipeType = FSRecipes.RECIPE_TYPES.get(recipeTypeId);
+            if (recipeTypeId == null) {
+                this.recipeType = null;
+            } else {
+                this.recipeType = FSRecipes.RECIPE_TYPES.get(recipeTypeId);
+
+            }
+            this.hasRecipeType = this.recipeType != null;
         }
 
         public List<ItemStack> getMaterials() {
@@ -48,8 +58,23 @@ public class FSStructureDefinitions {
         }
 
         public static StructureDefinition fromNetwork(FriendlyBufPayload buffer) {
-            var payload = buffer.getPayload();
-            return new StructureDefinition(payload.readResourceLocation(), payload.readResourceLocation());
+            FriendlyByteBuf buf = buffer.getPayload();
+            ResourceLocation patternId = buf.readResourceLocation();
+            boolean hasRecipeType = buf.readBoolean();
+            FSRecipeType recipeType = null;
+            if (hasRecipeType) {
+                ResourceLocation recipeTypeId = buf.readResourceLocation();
+                recipeType = FSRecipes.RECIPE_TYPES.get(recipeTypeId);
+            }
+            return new StructureDefinition(patternId, recipeType);
+        }
+
+        public void toNetwork(FriendlyByteBuf buf) {
+            buf.writeResourceLocation(this.patternId);
+            buf.writeBoolean(this.hasRecipeType);
+            if (this.hasRecipeType && this.recipeType != null) {
+                buf.writeResourceLocation(this.recipeType.getRegistryName());
+            }
         }
     }
 }

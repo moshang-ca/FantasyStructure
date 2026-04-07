@@ -1,10 +1,14 @@
 package org.moshang.fantasystructure;
 
+import com.lowdragmc.lowdraglib.Platform;
 import com.mojang.logging.LogUtils;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.crafting.CraftingHelper;
 import net.minecraftforge.event.RegisterCommandsEvent;
+import net.minecraftforge.event.server.ServerStartingEvent;
+import net.minecraftforge.event.server.ServerStoppingEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
@@ -17,6 +21,7 @@ import org.moshang.fantasystructure.command.Command;
 import org.moshang.fantasystructure.helper.blueprint.BlueprintEditor;
 import org.moshang.fantasystructure.helper.blueprint.BlueprintManager;
 import org.moshang.fantasystructure.helper.builder.StructureBuilderManager;
+import org.moshang.fantasystructure.integration.ae2.storage.StorageDataManager;
 import org.moshang.fantasystructure.network.FSMessages;
 import org.moshang.fantasystructure.registry.*;
 import org.moshang.fantasystructure.registry.recipe.FSRecipes;
@@ -40,6 +45,10 @@ public class FantasyStructure {
         MinecraftForge.EVENT_BUS.register(this);
         MinecraftForge.EVENT_BUS.register(StructureBuilderManager.class);
         MinecraftForge.EVENT_BUS.addListener(this::commandRegister);
+        if(Platform.isModLoaded("ae2")) {
+            MinecraftForge.EVENT_BUS.addListener(this::onServerStarting);
+            MinecraftForge.EVENT_BUS.addListener(this::onServerStopping);
+        }
         ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, Config.SPEC);
         CraftingHelper.register(SizedIngredient.TYPE, SizedIngredient.SERIALIZER);
     }
@@ -63,6 +72,17 @@ public class FantasyStructure {
         FSRecipes.initRecipeCapabilities();
         FSRecipes.initRecipeTypes();
         FSStructureDefinitions.init();
+    }
+
+    private void onServerStarting(ServerStartingEvent event) {
+        ServerLevel level = event.getServer().getLevel(ServerLevel.OVERWORLD);
+        if (level != null) {
+            StorageDataManager.init(level);
+        }
+    }
+
+    private void onServerStopping(ServerStoppingEvent event) {
+        StorageDataManager.clear();
     }
 
     public void commandRegister(RegisterCommandsEvent event) {

@@ -134,7 +134,7 @@ public class Blueprint {
             return bp;
         } catch (Exception e) {
             if(e instanceof BlueprintLoadException) throw e;
-            throw new BlueprintLoadException("Failed to load blueprint:" + e.getMessage(), e);
+            throw new BlueprintLoadException("Failed to load blueprint " + id + " :" + e.getMessage(), e);
         }
     }
 

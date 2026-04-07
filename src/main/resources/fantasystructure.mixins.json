@@ -2,7 +2,7 @@
   "required": true,
   "minVersion": "0.8",
   "package": "org.moshang.fantasystructure.mixin",
-  "compatibilityLevel": "JAVA_8",
+  "compatibilityLevel": "JAVA_17",
   "refmap": "fantasystructure.refmap.json",
   "mixins": [
     "EnergyStorageMixin",
