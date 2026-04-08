@@ -22,10 +22,10 @@ import javax.annotation.ParametersAreNonnullByDefault;
 
 @ParametersAreNonnullByDefault
 @MethodsReturnNonnullByDefault
-public abstract class BlockBusBase<T extends BlockEntity & IBus> extends HorizontalDirectionalBlock implements EntityBlock {
+public abstract class BlockAbstractBus<T extends BlockEntity & IBus> extends HorizontalDirectionalBlock implements EntityBlock {
     public static final EnumProperty<IO> IO_TYPE = EnumProperty.create("io_type", IO.class);
 
-    public BlockBusBase(int strength, IO io) {
+    public BlockAbstractBus(int strength, IO io) {
         super(BlockBehaviour.Properties.of()
                 .strength(strength)
                 .requiresCorrectToolForDrops());

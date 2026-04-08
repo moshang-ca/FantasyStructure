@@ -15,7 +15,7 @@ import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraftforge.network.NetworkHooks;
-import org.moshang.fantasystructure.api.block.BlockBusBase;
+import org.moshang.fantasystructure.api.block.BlockAbstractBus;
 import org.moshang.fantasystructure.api.capability.recipe.IO;
 import org.moshang.fantasystructure.api.capacity.ComponentEnergyCapacity;
 import org.moshang.fantasystructure.blockentity.container.BEEnergyBus;
@@ -27,7 +27,7 @@ import javax.annotation.ParametersAreNonnullByDefault;
 @SuppressWarnings("deprecation")
 @ParametersAreNonnullByDefault
 @MethodsReturnNonnullByDefault
-public class BlockEnergyBus extends BlockBusBase<BEEnergyBus> implements EntityBlock {
+public class BlockEnergyBus extends BlockAbstractBus<BEEnergyBus> implements EntityBlock {
     public static final EnumProperty<ComponentEnergyCapacity> TYPE = EnumProperty.create("type", ComponentEnergyCapacity.class);
 
     public BlockEnergyBus(int strength, ComponentEnergyCapacity type, IO io) {

@@ -13,7 +13,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraftforge.fml.ModList;
 import net.minecraftforge.registries.ForgeRegistries;
-import org.moshang.fantasystructure.api.block.BlockControllerBase;
+import org.moshang.fantasystructure.api.block.BlockAbstractController;
 import org.moshang.fantasystructure.data.BlockInfo;
 import org.moshang.fantasystructure.data.blueprint.StateCache;
 import org.moshang.fantasystructure.data.blueprint.TagCache;
@@ -119,7 +119,7 @@ public class Blueprint {
             loadTypeTable(channel, typeCount, stateTable, tagTableMap);
             Direction dir = Direction.NORTH;
             for(BlockState blockState : stateTable) {
-                if(blockState.getBlock() instanceof BlockControllerBase) {
+                if(blockState.getBlock() instanceof BlockAbstractController) {
                     dir = blockState.getValue(BlockStateProperties.HORIZONTAL_FACING);
                     break;
                 }

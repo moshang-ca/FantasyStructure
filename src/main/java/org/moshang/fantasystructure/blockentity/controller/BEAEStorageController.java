@@ -8,6 +8,8 @@ import appeng.api.storage.IStorageProvider;
 import appeng.api.storage.cells.IBasicCellItem;
 import appeng.me.helpers.IGridConnectedBlockEntity;
 import com.lowdragmc.lowdraglib.syncdata.IManagedStorage;
+import com.lowdragmc.lowdraglib.syncdata.annotation.DescSynced;
+import com.lowdragmc.lowdraglib.syncdata.annotation.DropSaved;
 import com.lowdragmc.lowdraglib.syncdata.annotation.Persisted;
 import com.lowdragmc.lowdraglib.syncdata.field.FieldManagedStorage;
 import com.lowdragmc.lowdraglib.syncdata.field.ManagedFieldHolder;
@@ -54,7 +56,7 @@ public class BEAEStorageController extends BlockEntityAbstractController impleme
 
     private final IManagedGridNode mainNode;
 
-    @Getter @Setter @Persisted
+    @Getter @Setter @Persisted @DropSaved @DescSynced
     private UUID structureId;
     private StorageData storageData;
     @Getter @Setter
@@ -163,8 +165,8 @@ public class BEAEStorageController extends BlockEntityAbstractController impleme
     }
 
     @Override
-    public void onDeformed() {
-        super.onDeformed();
+    public void onDeformed(boolean isRemoved) {
+        super.onDeformed(isRemoved);
         if(level != null && !level.isClientSide) {
             if(structureId != null) {
                 StorageDataManager.unload(structureId);

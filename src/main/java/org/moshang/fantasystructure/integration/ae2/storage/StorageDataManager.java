@@ -20,7 +20,7 @@ import java.util.zip.GZIPOutputStream;
 public class StorageDataManager {
     private static final String DATA_FOLDER = "multiblock_storage";
     private static final String FILE_EXTENSION = ".dat";
-    private static final String BACKUP_EXTENSION = ".dat.bak";
+    private static final String BACKUP_EXTENSION = ".bak";
     private static final Map<UUID, StorageData> loadedStorages = new HashMap<>();
     private static final Gson GSON = new GsonBuilder()
             .setPrettyPrinting()

@@ -12,6 +12,7 @@ import org.moshang.fantasystructure.api.capacity.ComponentEnergyCapacity;
 import org.moshang.fantasystructure.api.capacity.ComponentFluidCapacity;
 import org.moshang.fantasystructure.api.capacity.ComponentItemCapacity;
 import org.moshang.fantasystructure.api.capability.recipe.IO;
+import org.moshang.fantasystructure.block.BlockAEConnector;
 import org.moshang.fantasystructure.block.BlockStarCore;
 import org.moshang.fantasystructure.block.container.BlockEnergyBus;
 import org.moshang.fantasystructure.block.container.BlockFluidBus;
@@ -72,6 +73,8 @@ public class FSBlocks {
             register("tiny_fluid_output_bus", () -> new BlockFluidBus(3, ComponentFluidCapacity.TINY, IO.OUT))
     ).toArray(RegistryObject[]::new);
 
+    public static final RegistryObject<Block> AE_CONNECTOR;
+
     public static final RegistryObject<Block> CREATIVE_ENERGY_SOURCE = register("creative_energy_source", () -> new BlockCreativeEnergySource(3));
 
     public static final RegistryObject<Block> STAR_CORE = register("star_core", BlockStarCore::new);
@@ -79,8 +82,10 @@ public class FSBlocks {
     static {
         if(Platform.isModLoaded("ae2")) {
             AE_STORAGE_CONTROLLER = register("ae_storage_controller", () -> new BlockAEStorageController(3));
+            AE_CONNECTOR = register("ae_connector", () -> new BlockAEConnector(3));
         } else {
             AE_STORAGE_CONTROLLER = null;
+            AE_CONNECTOR = null;
         }
     }
 

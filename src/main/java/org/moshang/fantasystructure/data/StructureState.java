@@ -7,8 +7,8 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.moshang.fantasystructure.api.blockentity.IBus;
+import org.moshang.fantasystructure.api.blockentity.IStructureComponent;
 import org.moshang.fantasystructure.helper.StructurePattern;
 
 import java.util.*;
@@ -17,7 +17,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 @SuppressWarnings("deprecation")
 public class StructureState {
-    private static final int MAX_POSITON_SIZE = 128;
+    private static final int MAX_POSITION_SIZE = 256;
     private static final int MAX_CHUNK_CHECKED_PER_TICK = 2;
 
     private final Long2ObjectOpenHashMap<LongOpenHashSet> structurePosCache = new Long2ObjectOpenHashMap<>();
@@ -29,6 +29,8 @@ public class StructureState {
     private final BlockPos controllerPos;
     @NotNull @Getter
     private StructurePattern pattern; // This can be null when in constructor, but must be set after
+    @Getter
+    private final List<IStructureComponent> components = new ArrayList<>();
     @Getter
     private final List<IBus> collectedBuses = new ArrayList<>();
     @Getter
@@ -58,7 +60,7 @@ public class StructureState {
 
     public void onBlockChanged(BlockPos pos) {
         if(structurePosCache.containsKey(ChunkPos.asLong(pos))) {
-            if(needCheck.size() + 1 > MAX_POSITON_SIZE) {
+            if(needCheck.size() + 1 > MAX_POSITION_SIZE) {
                 markRecheck();
                 return;
             }
@@ -82,6 +84,14 @@ public class StructureState {
         }
 
         return isLastValid;
+    }
+
+    public void notifyAllComponents(boolean isFormed) {
+        if(isFormed) {
+            components.forEach(component -> component.onStructureFormed(controllerPos));
+        } else {
+            components.forEach(IStructureComponent::onStructureDeformed);
+        }
     }
 
     private void initQueue() {
@@ -112,6 +122,12 @@ public class StructureState {
             allValid = pattern.matches(level, controllerPos, pos);
             if(allValid) {
                 it.remove();
+                if(level.getBlockEntity(pos) instanceof IStructureComponent component) {
+                    components.add(component);
+                    if (component instanceof IBus bus) {
+                        collectedBuses.add(bus);
+                    }
+                }
             } else {
                 break;
             }
@@ -123,6 +139,7 @@ public class StructureState {
     private boolean handleChunkCheck(Level level) {
         int checked = 0;
         boolean allValid = true;
+        components.clear();
         collectedBuses.clear();
 
         while(checked < MAX_CHUNK_CHECKED_PER_TICK && !chunkCheckQueue.isEmpty()) {
@@ -134,22 +151,20 @@ public class StructureState {
                 BlockPos pos1 = BlockPos.of(pos);
                 if(!level.isLoaded(pos1)) {
                     unloadedChunks.add(chunkPosLong);
-                    break;
+                    continue;
                 }
-                allValid = pattern.matches(level, controllerPos, pos1);
-                if(!allValid) {
-                    break;
+                boolean matches = pattern.matches(level, controllerPos, pos1);
+                if(!matches) {
+                    allValid = false;
+                    needCheck.add(pos1);
+                    continue;
                 }
-                if(level.getBlockEntity(pos1) instanceof IBus bus) {
-                    collectedBuses.add(bus);
+                if(level.getBlockEntity(pos1) instanceof IStructureComponent component) {
+                    components.add(component);
+                    if (component instanceof IBus bus) {
+                        collectedBuses.add(bus);
+                    }
                 }
-            }
-
-            if(!allValid) {
-                chunkCheckQueue.clear();
-                // needRecheck.set(false);
-                isLastValid = allValid;
-                return isLastValid;
             }
             checked++;
         }

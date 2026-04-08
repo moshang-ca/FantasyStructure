@@ -17,7 +17,7 @@ import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.network.NetworkHooks;
-import org.moshang.fantasystructure.api.block.BlockBusBase;
+import org.moshang.fantasystructure.api.block.BlockAbstractBus;
 import org.moshang.fantasystructure.api.capability.recipe.IO;
 import org.moshang.fantasystructure.api.capacity.ComponentItemCapacity;
 import org.moshang.fantasystructure.blockentity.container.BEItemBus;
@@ -28,7 +28,7 @@ import javax.annotation.ParametersAreNonnullByDefault;
 
 @ParametersAreNonnullByDefault
 @MethodsReturnNonnullByDefault
-public class BlockItemBus extends BlockBusBase<BEItemBus> implements EntityBlock {
+public class BlockItemBus extends BlockAbstractBus<BEItemBus> implements EntityBlock {
     public static final EnumProperty<ComponentItemCapacity> TYPE = EnumProperty.create("type", ComponentItemCapacity.class);
 
     public BlockItemBus(int strength, ComponentItemCapacity type, IO io) {

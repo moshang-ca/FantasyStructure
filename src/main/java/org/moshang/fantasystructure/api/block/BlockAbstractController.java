@@ -33,13 +33,13 @@ import java.util.function.Supplier;
 @SuppressWarnings("deprecation")
 @ParametersAreNonnullByDefault
 @MethodsReturnNonnullByDefault
-public abstract class BlockControllerBase <T extends BlockEntityAbstractController> extends HorizontalDirectionalBlock implements EntityBlock {
+public abstract class BlockAbstractController<T extends BlockEntityAbstractController> extends HorizontalDirectionalBlock implements EntityBlock {
     private final Supplier<BlockEntityType<T>> blockEntityTypeSupplier;
     private final Supplier<ResourceLocation> controllerIdSupplier;
 
-    protected BlockControllerBase(int strength,
-                                  Supplier<BlockEntityType<T>> blockEntityTypeSupplier,
-                                  Supplier<ResourceLocation> controllerIdSupplier) {
+    protected BlockAbstractController(int strength,
+                                      Supplier<BlockEntityType<T>> blockEntityTypeSupplier,
+                                      Supplier<ResourceLocation> controllerIdSupplier) {
         super(Block.Properties.of()
                 .strength(strength)
                 .requiresCorrectToolForDrops()
@@ -94,7 +94,7 @@ public abstract class BlockControllerBase <T extends BlockEntityAbstractControll
     @Override
     public void onRemove(BlockState pState, Level pLevel, BlockPos pPos, BlockState pNewState, boolean pMovedByPiston) {
         if(!pLevel.isClientSide && pLevel.getBlockEntity(pPos) instanceof BlockEntityAbstractController be) {
-            be.onDeformed();
+            be.onDeformed(true);
         }
         super.onRemove(pState, pLevel, pPos, pNewState, pMovedByPiston);
     }

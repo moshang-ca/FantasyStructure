@@ -5,8 +5,8 @@ import com.lowdragmc.lowdraglib.syncdata.IManagedStorage;
 import com.lowdragmc.lowdraglib.syncdata.annotation.DescSynced;
 import com.lowdragmc.lowdraglib.syncdata.annotation.Persisted;
 import com.lowdragmc.lowdraglib.syncdata.annotation.RPCMethod;
+import com.lowdragmc.lowdraglib.syncdata.blockentity.IAsyncAutoSyncBlockEntity;
 import com.lowdragmc.lowdraglib.syncdata.blockentity.IAutoPersistBlockEntity;
-import com.lowdragmc.lowdraglib.syncdata.blockentity.IAutoSyncBlockEntity;
 import com.lowdragmc.lowdraglib.syncdata.blockentity.IRPCBlockEntity;
 import com.lowdragmc.lowdraglib.syncdata.field.FieldManagedStorage;
 import com.lowdragmc.lowdraglib.syncdata.field.ManagedFieldHolder;
@@ -33,7 +33,7 @@ import org.moshang.fantasystructure.registry.FSStructureDefinitions;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
-public abstract class BlockEntityAbstractController extends BlockEntity implements IEnhancedManaged, IRPCBlockEntity, IAutoSyncBlockEntity, IAutoPersistBlockEntity {
+public abstract class BlockEntityAbstractController extends BlockEntity implements IEnhancedManaged, IRPCBlockEntity, IAsyncAutoSyncBlockEntity, IAutoPersistBlockEntity {
     protected static final ManagedFieldHolder MANAGED_FIELD_HOLDER = new ManagedFieldHolder(BlockEntityAbstractController.class);
     protected final FieldManagedStorage syncStorage = new FieldManagedStorage(this);
 
@@ -111,7 +111,7 @@ public abstract class BlockEntityAbstractController extends BlockEntity implemen
                 if(isValid) {
                     onFormed();
                 } else {
-                    onDeformed();
+                    onDeformed(false);
                 }
             }
             if(isValid) {
@@ -166,9 +166,14 @@ public abstract class BlockEntityAbstractController extends BlockEntity implemen
 //        setChanged();
 //    }
 
-    public void onFormed() {}
+    public void onFormed() {
+        structureState.notifyAllComponents(formed);
+    }
 
-    public void onDeformed() {}
+    public void onDeformed(boolean isRemoved) {
+        FantasyStructure.LOGGER.info("Deforming structure");
+        structureState.notifyAllComponents(!isRemoved && formed);
+    }
 
     public void autoBuild(ItemStack builderStack, boolean isCreative) {
         if(pattern == null) initPattern();

@@ -15,7 +15,7 @@ import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraftforge.network.NetworkHooks;
 import org.jetbrains.annotations.NotNull;
-import org.moshang.fantasystructure.api.block.BlockBusBase;
+import org.moshang.fantasystructure.api.block.BlockAbstractBus;
 import org.moshang.fantasystructure.api.capability.recipe.IO;
 import org.moshang.fantasystructure.api.capacity.ComponentFluidCapacity;
 import org.moshang.fantasystructure.blockentity.container.BEFluidBus;
@@ -25,7 +25,7 @@ import org.moshang.fantasystructure.menu.menuprovider.BlockMenuProvider;
 import javax.annotation.ParametersAreNonnullByDefault;
 
 @ParametersAreNonnullByDefault
-public class BlockFluidBus extends BlockBusBase<BEFluidBus> implements EntityBlock {
+public class BlockFluidBus extends BlockAbstractBus<BEFluidBus> implements EntityBlock {
     public static final EnumProperty<ComponentFluidCapacity> TYPE = EnumProperty.create("type", ComponentFluidCapacity.class);
 
     public BlockFluidBus(int strength, ComponentFluidCapacity type, IO io) {
@@ -59,6 +59,7 @@ public class BlockFluidBus extends BlockBusBase<BEFluidBus> implements EntityBlo
     }
 
     @Override
+    @NotNull
     protected BEFluidBus createBlockEntity(BlockPos pPos, BlockState pState) {
         return new BEFluidBus(pPos, pState);
     }

@@ -8,6 +8,7 @@ import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import org.moshang.fantasystructure.FantasyStructure;
+import org.moshang.fantasystructure.blockentity.BEAEConnector;
 import org.moshang.fantasystructure.blockentity.BEStarCore;
 import org.moshang.fantasystructure.blockentity.container.BEEnergyBus;
 import org.moshang.fantasystructure.blockentity.container.BEFluidBus;
@@ -30,6 +31,7 @@ public class FSBlockEntities {
     public static final RegistryObject<BlockEntityType<BEItemBus>> ITEM_BUS_BE = register("item_bus", BEItemBus::new, merge(FSBlocks.ITEM_INPUT_BUSES, FSBlocks.ITEM_OUTPUT_BUSES));
     public static final RegistryObject<BlockEntityType<BEEnergyBus>> ENERGY_BUS_BE = register("energy_bus", BEEnergyBus::new, merge(FSBlocks.ENERGY_INPUT_BUSES, FSBlocks.ENERGY_OUTPUT_BUSES));
     public static final RegistryObject<BlockEntityType<BEFluidBus>> FLUID_BUS_BE = register("fluid_bus", BEFluidBus::new, merge(FSBlocks.FLUID_INPUT_BUSES, FSBlocks.FLUID_OUTPUT_BUSES));
+    public static final RegistryObject<BlockEntityType<BEAEConnector>> AE_CONNECTOR_BE;
 
     public static final RegistryObject<BlockEntityType<BlockEntityCreativeEnergySource>> CREATIVE_ENERGY_SOURCE_BE = register("creative_energy_source", BlockEntityCreativeEnergySource::new, FSBlocks.CREATIVE_ENERGY_SOURCE);
 
@@ -38,8 +40,10 @@ public class FSBlockEntities {
     static {
         if(PlatformImpl.isModLoaded("ae2")) {
             AE_STORAGE_CONTROLLER_BE = register("ae_storage_controller", BEAEStorageController::new, FSBlocks.AE_STORAGE_CONTROLLER);
+            AE_CONNECTOR_BE = register("ae_connector", BEAEConnector::new, FSBlocks.AE_CONNECTOR);
         } else {
             AE_STORAGE_CONTROLLER_BE = null;
+            AE_CONNECTOR_BE = null;
         }
     }
 
