@@ -10,6 +10,7 @@ import com.lowdragmc.lowdraglib.syncdata.payload.FriendlyBufPayload;
 public class FSLDLibPlugin implements ILDLibPlugin {
     @Override
     public void onLoad() {
-        TypedPayloadRegistries.register(FriendlyBufPayload.class, FriendlyBufPayload::new, new StructureDefinitionAccessor(), 1000);
+        TypedPayloadRegistries.register(FriendlyBufPayload.class, FriendlyBufPayload::new, Accessor.STRUCTURE_DEFINITION, 1000);
+        TypedPayloadRegistries.register(FriendlyBufPayload.class, FriendlyBufPayload::new, Accessor.STORAGE_DATA, 1000);
     }
 }

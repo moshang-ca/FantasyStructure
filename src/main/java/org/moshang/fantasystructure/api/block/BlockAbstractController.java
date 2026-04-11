@@ -1,5 +1,6 @@
 package org.moshang.fantasystructure.api.block;
 
+import com.lowdragmc.lowdraglib.gui.factory.BlockEntityUIFactory;
 import lombok.Getter;
 import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.core.BlockPos;
@@ -19,11 +20,8 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.material.PushReaction;
 import net.minecraft.world.phys.BlockHitResult;
-import net.minecraftforge.network.NetworkHooks;
 import org.moshang.fantasystructure.api.blockentity.BlockEntityAbstractController;
 import org.moshang.fantasystructure.client.render.StructurePreviewRenderer;
-import org.moshang.fantasystructure.menu.ControllerMenu;
-import org.moshang.fantasystructure.menu.menuprovider.BlockMenuProvider;
 
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -112,7 +110,8 @@ public abstract class BlockAbstractController<T extends BlockEntityAbstractContr
         if(!level.isClientSide && player instanceof ServerPlayer serverPlayer) {
             BlockEntity be = level.getBlockEntity(pos);
             if(be instanceof BlockEntityAbstractController controller) {
-                NetworkHooks.openScreen(serverPlayer, new BlockMenuProvider(controller, ControllerMenu.class), buf -> buf.writeBlockPos(pos));
+                // NetworkHooks.openScreen(serverPlayer, new BlockMenuProvider(controller, ControllerMenu.class), buf -> buf.writeBlockPos(pos));
+                BlockEntityUIFactory.INSTANCE.openUI(controller, serverPlayer);
                 return InteractionResult.CONSUME;
             }
         }

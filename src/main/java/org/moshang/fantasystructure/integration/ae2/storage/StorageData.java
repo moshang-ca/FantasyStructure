@@ -11,7 +11,9 @@ import it.unimi.dsi.fastutil.objects.Object2LongMaps;
 import it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap;
 import lombok.Getter;
 import lombok.Setter;
+import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
+import org.moshang.fantasystructure.FantasyStructure;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -27,6 +29,8 @@ public class StorageData implements MEStorage {
     @Setter
     private long maxBytes = (1 << 12) * maxTypes;
 
+    private transient long usedBytes = 0;
+    private transient long usedTypes = 0;
     @Setter
     private boolean dirty = false;
 
@@ -38,9 +42,28 @@ public class StorageData implements MEStorage {
         this.id = id;
     }
 
+    public static StorageData fromNetwork(FriendlyByteBuf buf) {
+        StorageData data = new StorageData(buf.readUUID());
+        data.maxTypes = buf.readLong();
+        data.maxBytes = buf.readLong();
+        data.usedTypes = buf.readLong();
+        data.usedBytes = buf.readLong();
+        FantasyStructure.LOGGER.info("client get used bytes {}, used types {}", data.usedBytes, data.usedTypes);
+        return data;
+    }
+
+    public void toNetwork(FriendlyByteBuf buf) {
+        buf.writeUUID(this.id);
+        buf.writeLong(this.maxTypes);
+        buf.writeLong(this.maxBytes);
+        buf.writeLong(this.getUsedTypes());
+        buf.writeLong(this.getUsedBytes());
+    }
+
     public void addCapacity(long additionalTypes, long additionalBytes) {
         this.maxTypes += additionalTypes;
         this.maxBytes += additionalBytes;
+        setDirty(true);
     }
 
     @Override
@@ -94,11 +117,11 @@ public class StorageData implements MEStorage {
     }
 
     public long getUsedBytes() {
-        return channels.values().stream().mapToLong(TypeChannel::getUsedBytes).sum();
+        return channels.isEmpty() ? usedBytes : channels.values().stream().mapToLong(TypeChannel::getUsedBytes).sum();
     }
 
     public long getUsedTypes() {
-        return channels.values().stream().mapToLong(TypeChannel::getTypes).sum();
+        return channels.isEmpty() ? usedTypes : channels.values().stream().mapToLong(TypeChannel::getTypes).sum();
     }
 
     private TypeChannel getOrCreate(AEKeyType keyType) {

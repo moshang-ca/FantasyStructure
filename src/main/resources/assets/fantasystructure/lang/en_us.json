@@ -1,4 +1,8 @@
 {
   "fantasystructure.recipe.tooltip.chance": "Chance: %d%%",
-  "fantasystructure.recipe.tooltip.per_tick": "Per Tick Consume/Produce: %s"
+  "fantasystructure.recipe.tooltip.per_tick": "Per Tick Consume/Produce: %s",
+
+  "fantasystructure.gui.button.upgrade": "Upgrade",
+
+  "fantasystructure.gui.structure_info.storage": "Storage condition: \n    Bytes: %d / %d \n    Types: %d / %d"
 }

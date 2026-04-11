@@ -56,15 +56,18 @@ public abstract class BlockEntityAbstractRecipeController extends BlockEntityAbs
     @Persisted
     private final RecipeLogic recipeLogic;
     private final Table<IO, RecipeCapability<?>, List<IRecipeHandler<?>>> recipeCapabilityProxies;
+    private final ContentModifier parallel = new ContentModifier(0, 1);
     private final List<ISubscription> busSubscriptions = new ArrayList<>();
 
     @SuppressWarnings({"UnstableApiUsage"})
     public BlockEntityAbstractRecipeController(BlockEntityType<?> entityType,
-                                               BlockPos pos, BlockState state, ResourceLocation controllerId) {
+                                               BlockPos pos, BlockState state,
+                                               ResourceLocation controllerId) {
         super(entityType, pos, state, controllerId);
         this.recipeLogic = createRecipeLogic();
         this.recipeCapabilityProxies = Tables.newCustomTable(new EnumMap<>(IO.class), HashMap::new);
     }
+
 
     @Override
     public void setRemoved() {
@@ -90,11 +93,29 @@ public abstract class BlockEntityAbstractRecipeController extends BlockEntityAbs
 //        setChanged();
 //    }
 
+
+    @Override
+    public void onUpgrade() {
+        super.onUpgrade();
+        if(upgradeInv != null) {
+            for(int i = 0; i < upgradeInv.getSlots(); ++i) {
+                var stack = upgradeInv.getStackInSlot(i);
+                if(!stack.isEmpty()) {
+                    if(true) {  // This will be replaced by a type check.
+                        parallel.addAddition(1);
+                    }
+                }
+            }
+        }
+    }
+
+    @Override
     public void onFormed() {
         resetRecipeCapabilityProxies();
     }
 
-    public void onDeformed() {
+    @Override
+    public void onDeformed(boolean deformed) {
         recipeCapabilityProxies.clear();
 
     }
@@ -115,7 +136,7 @@ public abstract class BlockEntityAbstractRecipeController extends BlockEntityAbs
     @Override
     @Nullable
     public ContentModifier getMaxParallel(FSRecipe recipe) {
-        return new ContentModifier(5, 0);
+        return parallel;
     }
 
     protected RecipeLogic createRecipeLogic() {

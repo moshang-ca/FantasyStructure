@@ -2,10 +2,12 @@ package org.moshang.fantasystructure.integration.ae2.storage;
 
 import appeng.api.stacks.AEKey;
 import com.google.gson.*;
+import com.lowdragmc.lowdraglib.utils.NBTToJsonConverter;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.storage.LevelResource;
 import org.moshang.fantasystructure.FantasyStructure;
+import org.moshang.fantasystructure.util.JsonUtil;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -178,7 +180,7 @@ public class StorageDataManager {
                 CompoundTag keyTag = key.toTagGeneric();
                 JsonObject itemJson = new JsonObject();
                 itemJson.addProperty("amount", amount);
-                itemJson.add("key", GSON.fromJson(keyTag.toString(), JsonObject.class));
+                itemJson.add("key", NBTToJsonConverter.getObject(keyTag));
                 items.add(itemJson);
             }
             channelJson.add("items", items);
@@ -210,7 +212,7 @@ public class StorageDataManager {
                     long amount = itemJson.get("amount").getAsLong();
 
                     JsonObject keyJson = itemJson.getAsJsonObject("key");
-                    CompoundTag keyTag = jsonToCompoundTag(keyJson);
+                    CompoundTag keyTag = JsonUtil.jsonToCompoundTag(keyJson);
                     AEKey key = AEKey.fromTagGeneric(keyTag);
                     if(key != null) {
                         data.restoreItem(key, amount);
@@ -220,28 +222,5 @@ public class StorageDataManager {
         }
         data.setDirty(false);
         return data;
-    }
-
-    private static CompoundTag jsonToCompoundTag(JsonObject json) {
-        CompoundTag tag = new CompoundTag();
-
-        for(String key : json.keySet()) {
-            JsonElement element = json.get(key);
-            if(element.isJsonPrimitive()) {
-                JsonPrimitive primitive = element.getAsJsonPrimitive();
-                if(primitive.isString()) {
-                    tag.putString(key, primitive.getAsString());
-                } else if(primitive.isNumber()) {
-                    tag.putLong(key, primitive.getAsLong());
-                } else if(primitive.isBoolean()) {
-                    tag.putBoolean(key, primitive.getAsBoolean());
-                }
-            } else if(element.isJsonObject()) {
-                tag.put(key, jsonToCompoundTag(element.getAsJsonObject()));
-            } else if(element.isJsonArray()) {
-                tag.putString(key, element.toString());
-            }
-        }
-        return tag;
     }
 }

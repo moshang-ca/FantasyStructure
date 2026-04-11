@@ -1,6 +1,5 @@
 package org.moshang.fantasystructure.registry;
 
-import com.lowdragmc.lowdraglib.syncdata.payload.FriendlyBufPayload;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 import net.minecraft.network.FriendlyByteBuf;
@@ -42,23 +41,11 @@ public class FSStructureDefinitions {
             this.hasRecipeType = recipeType != null;
         }
 
-        public StructureDefinition(ResourceLocation patternId, ResourceLocation recipeTypeId) {
-            this.patternId = patternId;
-            if (recipeTypeId == null) {
-                this.recipeType = null;
-            } else {
-                this.recipeType = FSRecipes.RECIPE_TYPES.get(recipeTypeId);
-
-            }
-            this.hasRecipeType = this.recipeType != null;
-        }
-
         public List<ItemStack> getMaterials() {
             return SlotUtil.getItemByDefinition(this);
         }
 
-        public static StructureDefinition fromNetwork(FriendlyBufPayload buffer) {
-            FriendlyByteBuf buf = buffer.getPayload();
+        public static StructureDefinition fromNetwork(FriendlyByteBuf buf) {
             ResourceLocation patternId = buf.readResourceLocation();
             boolean hasRecipeType = buf.readBoolean();
             FSRecipeType recipeType = null;

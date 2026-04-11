@@ -2,6 +2,7 @@ package org.moshang.fantasystructure.blockentity;
 
 import appeng.api.config.CpuSelectionMode;
 import appeng.api.crafting.IPatternDetails;
+import appeng.api.networking.GridFlags;
 import appeng.api.networking.crafting.CraftingJobStatus;
 import appeng.api.networking.crafting.ICraftingCPU;
 import appeng.api.networking.crafting.ICraftingProvider;
@@ -30,6 +31,7 @@ public class BEAEConnector extends AENetworkBlockEntity implements IStructureCom
     public BEAEConnector(BlockPos pos, BlockState blockState) {
         super(FSBlockEntities.AE_CONNECTOR_BE.get(), pos, blockState);
         getMainNode()
+                .setFlags(GridFlags.REQUIRE_CHANNEL)
                 .addService(IStorageProvider.class, this)
                 .addService(ICraftingProvider.class, this);
     }

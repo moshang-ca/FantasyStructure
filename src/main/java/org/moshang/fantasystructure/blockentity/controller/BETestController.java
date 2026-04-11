@@ -53,8 +53,8 @@ public class BETestController extends BlockEntityAbstractRecipeController {
     }
 
     @Override
-    public void onDeformed() {
-        super.onDeformed();
+    public void onDeformed(boolean deformed) {
+        super.onDeformed(deformed);
         if(level != null && !level.isClientSide) {
             level.removeBlock(worldPosition.offset(getRenderCenter()), false);
         }

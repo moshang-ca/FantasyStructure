@@ -1,5 +1,6 @@
 package org.moshang.fantasystructure.blockentity.controller;
 
+import appeng.api.networking.GridFlags;
 import appeng.api.networking.GridHelper;
 import appeng.api.networking.IManagedGridNode;
 import appeng.api.orientation.BlockOrientation;
@@ -7,12 +8,15 @@ import appeng.api.storage.IStorageMounts;
 import appeng.api.storage.IStorageProvider;
 import appeng.api.storage.cells.IBasicCellItem;
 import appeng.me.helpers.IGridConnectedBlockEntity;
+import com.lowdragmc.lowdraglib.gui.widget.LabelWidget;
+import com.lowdragmc.lowdraglib.gui.widget.WidgetGroup;
 import com.lowdragmc.lowdraglib.syncdata.IManagedStorage;
 import com.lowdragmc.lowdraglib.syncdata.annotation.DescSynced;
 import com.lowdragmc.lowdraglib.syncdata.annotation.DropSaved;
 import com.lowdragmc.lowdraglib.syncdata.annotation.Persisted;
 import com.lowdragmc.lowdraglib.syncdata.field.FieldManagedStorage;
 import com.lowdragmc.lowdraglib.syncdata.field.ManagedFieldHolder;
+import com.lowdragmc.lowdraglib.utils.LocalizationUtils;
 import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.core.BlockPos;
@@ -49,24 +53,22 @@ public class BEAEStorageController extends BlockEntityAbstractController impleme
         return syncStorage;
     }
 
-    @Override
-    public IManagedStorage getRootStorage() {
-        return getSyncStorage();
-    }
-
     private final IManagedGridNode mainNode;
 
     @Getter @Setter @Persisted @DropSaved @DescSynced
     private UUID structureId;
+    @DescSynced
     private StorageData storageData;
     @Getter @Setter
     private boolean isMounted = false;
 
     public BEAEStorageController(BlockEntityType<?> entityType, BlockPos pos, BlockState state, ResourceLocation controllerId) {
         super(entityType, pos, state, controllerId);
+        this.upgradeInv.setFilter(stack -> stack.getItem() instanceof IBasicCellItem);
         this.mainNode = GridHelper.createManagedNode(this, StorageNodeListener.INSTANCE)
                 .setVisualRepresentation(getBlockState().getBlock().asItem())
                 .setIdlePowerUsage(1.f)
+                .setFlags(GridFlags.REQUIRE_CHANNEL)
                 .setInWorldNode(true)
                 .setExposedOnSides(EnumSet.allOf(Direction.class))
                 .addService(IStorageProvider.class, this);
@@ -82,7 +84,6 @@ public class BEAEStorageController extends BlockEntityAbstractController impleme
     public void onLoad() {
         super.onLoad();
         if(level != null && !level.isClientSide) {
-            System.out.println("create main node");
             if(mainNode.getNode() == null) {
                 mainNode.create(level, worldPosition);
             }
@@ -128,6 +129,28 @@ public class BEAEStorageController extends BlockEntityAbstractController impleme
     public void load(@NotNull CompoundTag pTag) {
         super.load(pTag);
         mainNode.loadFromNBT(pTag);
+    }
+
+    @Override
+    public void onUpgrade() {
+        for(int i = 0; i < this.upgradeInv.getSlots(); ++i) {
+            if(addCapacity(this.upgradeInv.getStackInSlot(i))) {
+                this.upgradeInv.extractItem(i, 1, false);
+            }
+        }
+    }
+
+    @SuppressWarnings("DataFlowIssue")
+    @Override
+    protected WidgetGroup createUI() {
+        var root = super.createUI();
+
+        var infoWidget = root.getFirstWidgetById("info_widget");
+        ((WidgetGroup) infoWidget).addWidget(new LabelWidget(5, 5, () -> LocalizationUtils.format(
+                "fantasystructure.gui.structure_info.storage",
+                storageData.getUsedBytes(), storageData.getMaxBytes(),
+                storageData.getUsedTypes(), storageData.getMaxTypes())));
+        return root;
     }
 
     @Override
@@ -179,7 +202,7 @@ public class BEAEStorageController extends BlockEntityAbstractController impleme
 
     public boolean addCapacity(ItemStack cellItem) {
         if(level == null || level.isClientSide
-                || storageData == null || !(cellItem.getItem() instanceof IBasicCellItem)) return false;
+                || storageData == null || cellItem.isEmpty()) return false;
 
         var identifier = CellIdentifier.fromItemStack(cellItem);
         if(identifier == null) return false;
@@ -205,7 +228,7 @@ public class BEAEStorageController extends BlockEntityAbstractController impleme
         isMounted = false;
     }
 
-    record CellIdentifier(long types, long bytes) {
+    public record CellIdentifier(long types, long bytes) {
         @Nullable
             public static CellIdentifier fromItemStack(ItemStack cellItem) {
                 if (cellItem.getItem() instanceof IBasicCellItem cell) {
