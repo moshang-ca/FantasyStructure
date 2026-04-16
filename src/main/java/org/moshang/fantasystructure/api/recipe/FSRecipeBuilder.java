@@ -183,7 +183,6 @@ public class FSRecipeBuilder {
     public FSRecipeBuilder inputFluids(FluidStack... inputs) {
         return input(FluidRecipeCapability.INSTANCE, Arrays.stream(inputs).map(fluid -> {
             ResourceLocation fluidID = ForgeRegistries.FLUIDS.getKey(fluid.getFluid());
-            System.out.println("fluidID: " + fluidID);
             assert fluidID != null;
             return FluidIngredient.of(TagKey.create(ForgeRegistries.FLUIDS.getRegistryKey(), new ResourceLocation("forge", fluidID.getPath())), fluid.getAmount());
         }).toArray(FluidIngredient[]::new));

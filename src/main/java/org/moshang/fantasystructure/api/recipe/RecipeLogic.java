@@ -38,7 +38,7 @@ public class RecipeLogic implements IEnhancedManaged {
     @Getter
     private final IRecipeMachine machine;
     /**
-     * Listeners that will be called when the machine is woken up, used to notify the machine.
+     * Listeners will be called when the machine is woken up
      */
     private final List<Runnable> wakeupListener = new ArrayList<>();
 

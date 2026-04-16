@@ -56,7 +56,7 @@ public abstract class BlockEntityAbstractRecipeController extends BlockEntityAbs
     @Persisted
     private final RecipeLogic recipeLogic;
     private final Table<IO, RecipeCapability<?>, List<IRecipeHandler<?>>> recipeCapabilityProxies;
-    private final ContentModifier parallel = new ContentModifier(0, 1);
+    private final ContentModifier parallel = new ContentModifier(5, 0);
     private final List<ISubscription> busSubscriptions = new ArrayList<>();
 
     @SuppressWarnings({"UnstableApiUsage"})
@@ -125,12 +125,6 @@ public abstract class BlockEntityAbstractRecipeController extends BlockEntityAbs
     protected void setFormed(boolean formed) {
         super.setFormed(formed);
         recipeLogic.setStatus(formed);
-    }
-
-    @Override
-    public @Nullable FSRecipe getModifyRecipe(FSRecipe recipe) {
-        recipe = recipe.copy(getMaxParallel(recipe), false);
-        return recipe;
     }
 
     @Override

@@ -2,7 +2,6 @@ package org.moshang.fantasystructure.block.container;
 
 import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -32,10 +31,7 @@ public class BlockEnergyBus extends BlockAbstractBus<BEEnergyBus> implements Ent
 
     public BlockEnergyBus(int strength, ComponentEnergyCapacity type, IO io) {
         super(strength, io);
-        this.registerDefaultState(this.stateDefinition.any()
-                .setValue(FACING, Direction.NORTH)
-                .setValue(TYPE, type)
-                .setValue(IO_TYPE, io));
+        this.registerDefaultState(this.defaultBlockState().setValue(TYPE, type));
     }
 
     @Override

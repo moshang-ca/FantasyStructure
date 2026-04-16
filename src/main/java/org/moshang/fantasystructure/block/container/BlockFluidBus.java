@@ -30,9 +30,7 @@ public class BlockFluidBus extends BlockAbstractBus<BEFluidBus> implements Entit
 
     public BlockFluidBus(int strength, ComponentFluidCapacity type, IO io) {
         super(strength, io);
-
-        this.registerDefaultState(this.stateDefinition.any()
-                .setValue(TYPE, type));
+        this.registerDefaultState(this.defaultBlockState().setValue(TYPE, type));
     }
 
     @Override
