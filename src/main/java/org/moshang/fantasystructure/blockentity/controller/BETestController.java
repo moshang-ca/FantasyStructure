@@ -26,7 +26,7 @@ public class BETestController extends BlockEntityAbstractRecipeController {
 
     public BETestController(BlockEntityType<?> entityType, BlockPos pos,
                             BlockState state, ResourceLocation controllerId) {
-        super(entityType, pos, state, controllerId);
+        super(entityType, pos, state, controllerId, 8, -1, 1);
     }
 
     @Override

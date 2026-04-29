@@ -200,7 +200,6 @@ public class FSRecipe implements Recipe<Container> {
     public boolean handleRecipe(boolean perTick, IO io, IRecipeCapabilityHolder holder, Map<RecipeCapability<?>, List<Content>> contents) {
         Table<IO, RecipeCapability<?>, List<IRecipeHandler<?>>> capabilityProxies = holder.getRecipeCapabilitiesProxy();
         for(var entry : contents.entrySet()) {
-            Set<IRecipeHandler<?>> used = new HashSet<>();
             List content = new ArrayList<>();
             Map<String, List> contentSlot = new HashMap<>();
             List contentSearch  = new ArrayList();
@@ -225,7 +224,12 @@ public class FSRecipe implements Recipe<Container> {
             if(content.isEmpty() && contentSlot.isEmpty()) continue;
             if(content.isEmpty()) content = null;
 
-            var result = handlerContentsInternal(io, io, capabilityProxies, capability, used, content, contentSlot, contentSearch, contentSlotSearch, false);
+            var simulateRes = handlerContentsInternal(io, io, capabilityProxies, capability, new HashSet<>(), content, contentSlot, contentSearch, contentSlotSearch, true);
+            if(simulateRes.getA() != null || !simulateRes.getB().isEmpty()) {
+                return false;
+            }
+
+            var result = handlerContentsInternal(io, io, capabilityProxies, capability, new HashSet<>(), content, contentSlot, contentSearch, contentSlotSearch, false);
             if(result.getA() != null || !result.getB().isEmpty()) {
                 return false;
             }
@@ -235,8 +239,8 @@ public class FSRecipe implements Recipe<Container> {
 
     /**
      * This will handle the content, will be called in {@code matchRecipe()} and {@code handleRecipe()}
-     * @param capIO the handler's IO
-     * @param io the demanded IO, usually same as the capIO.
+     * @param capIO the handler's IO direction
+     * @param io the demanded IO direction, usually same as the capIO.
      * @param capabilityProxies all capability handlers carried by a holder
      * @param capability capability that handle the content needed
      * @param used all handler that failed to handle the contents
@@ -244,7 +248,7 @@ public class FSRecipe implements Recipe<Container> {
      * @param contentSlot all need to be handled contents, which should be put in exactly slot
      * @param contentSearch the full list of contents, this won't be affected by the chance.
      * @param contentSlotSearch the full list of contents with exactly slot name, this won't be affected by the chance.
-     * @param simulate should be executed in real environment
+     * @param simulate whether to simulate the process
      * */
     private Tuple<List, Map<String, List>> handlerContentsInternal(
             IO capIO, IO io, Table<IO, RecipeCapability<?>, List<IRecipeHandler<?>>> capabilityProxies,

@@ -1,5 +1,6 @@
 package org.moshang.fantasystructure.item;
 
+import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -30,12 +31,15 @@ import net.minecraftforge.items.IItemHandler;
 import org.moshang.fantasystructure.FantasyStructure;
 import org.moshang.fantasystructure.api.blockentity.BlockEntityAbstractController;
 
+import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
 // TODO: Open screen when use shift + right-click
 // TODO: Remove clear position storage function when use shift + right-click
+@ParametersAreNonnullByDefault
+@MethodsReturnNonnullByDefault
 public class ItemAutoBuilder extends Item {
     private static final String BUILDER_DATA = FantasyStructure.MODID + "_builder_data";
 

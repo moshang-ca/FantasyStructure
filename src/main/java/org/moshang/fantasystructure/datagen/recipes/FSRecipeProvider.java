@@ -19,9 +19,15 @@ public class FSRecipeProvider extends RecipeProvider {
 
     @Override
     protected void buildRecipes(@NotNull Consumer<FinishedRecipe> finishedRecipe) {
-        FSRecipeBuilder.of(FantasyStructure.id("coal_energy"), FSRecipes.RECIPE_TYPES.get("stellar_simulacrum"))
+        FSRecipeBuilder.of(FantasyStructure.id("transmutation_lava"), FSRecipes.RECIPE_TYPES.get("stellar_simulacrum"))
                 .inputFluids(FluidStack.create(Fluids.WATER, 1000))
                 .outputFluids(FluidStack.create(Fluids.LAVA, 1000))
+                .duration(200)
+                .save(finishedRecipe);
+
+        FSRecipeBuilder.of(FantasyStructure.id("transmutation_water"), FSRecipes.RECIPE_TYPES.get("stellar_simulacrum"))
+                .inputFluids(FluidStack.create(Fluids.LAVA, 1000))
+                .outputFluids(FluidStack.create(Fluids.WATER, 1000))
                 .duration(200)
                 .save(finishedRecipe);
     }

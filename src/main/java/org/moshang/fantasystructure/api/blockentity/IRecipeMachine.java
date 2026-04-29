@@ -1,5 +1,6 @@
 package org.moshang.fantasystructure.api.blockentity;
 
+import com.mojang.datafixers.util.Pair;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.Level;
@@ -10,8 +11,7 @@ import org.jetbrains.annotations.Nullable;
 import org.moshang.fantasystructure.api.capability.recipe.IRecipeCapabilityHolder;
 import org.moshang.fantasystructure.api.recipe.FSRecipe;
 import org.moshang.fantasystructure.api.recipe.FSRecipeType;
-import org.moshang.fantasystructure.api.recipe.RecipeLogic;
-import org.moshang.fantasystructure.api.recipe.content.ContentModifier;
+import org.moshang.fantasystructure.api.recipe.MultiRecipeThread;
 
 import java.util.Optional;
 
@@ -22,7 +22,8 @@ public interface IRecipeMachine extends IRecipeCapabilityHolder {
     BlockEntity getHolder();
     Optional<Direction> getFrontFacing();
     FSRecipeType getRecipeType();
-    @NotNull RecipeLogic getRecipeLogic();
+    // @NotNull RecipeLogic getRecipeLogic();
+    @NotNull MultiRecipeThread getMultiRecipeThread();
     long getOffset();
 
 
@@ -60,7 +61,7 @@ public interface IRecipeMachine extends IRecipeCapabilityHolder {
         }
     }
 
-    default boolean runRecipeLogic() {
+    default boolean runRecipeThread() {
         return getRecipeType() != FSRecipeType.DUMMY;
     }
 
@@ -75,7 +76,16 @@ public interface IRecipeMachine extends IRecipeCapabilityHolder {
         if(recipe == null) {
             return null;
         }
-        return applyParallel(recipe, getMaxParallel(recipe).apply(1).intValue());
+        return applyParallel(recipe, getMaxParallel());
+    }
+
+    @Nullable
+    default Pair<FSRecipe, Integer> doModifyRecipe(@NotNull FSRecipe recipe, int maxParallel) {
+        recipe = getModifyRecipe(recipe);
+        if(recipe == null) {
+            return null;
+        }
+        return FSRecipe.calculateParallel(this, recipe, maxParallel);
     }
 
     @Nullable
@@ -83,8 +93,8 @@ public interface IRecipeMachine extends IRecipeCapabilityHolder {
         return recipe;
     }
 
-    default ContentModifier getMaxParallel(@NotNull FSRecipe recipe) {
-        return ContentModifier.IDENTITY;
+    default int getMaxParallel() {
+        return 1;
     }
 
     @NotNull

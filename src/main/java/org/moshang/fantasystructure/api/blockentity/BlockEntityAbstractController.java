@@ -42,7 +42,8 @@ import org.moshang.fantasystructure.registry.FSStructureDefinitions;
 
 import java.util.concurrent.CompletableFuture;
 
-public abstract class BlockEntityAbstractController extends BlockEntity implements IUIHolder.BlockEntityUI, IEnhancedManaged, IRPCBlockEntity, IAsyncAutoSyncBlockEntity, IAutoPersistBlockEntity {
+public abstract class BlockEntityAbstractController extends BlockEntity
+        implements IUIHolder.BlockEntityUI, IEnhancedManaged, IRPCBlockEntity, IAsyncAutoSyncBlockEntity, IAutoPersistBlockEntity {
     protected static final ManagedFieldHolder MANAGED_FIELD_HOLDER = new ManagedFieldHolder(BlockEntityAbstractController.class);
     protected final FieldManagedStorage syncStorage = new FieldManagedStorage(this);
 
@@ -121,11 +122,6 @@ public abstract class BlockEntityAbstractController extends BlockEntity implemen
 
             if(wasFormed != isValid) {
                 setFormed(isValid);
-                if(isValid) {
-                    onFormed();
-                } else {
-                    onDeformed(false);
-                }
             }
             if(isValid) {
                 serverTickInternal();
@@ -167,10 +163,6 @@ public abstract class BlockEntityAbstractController extends BlockEntity implemen
             savedData.registerStructure(structureState);
             boolean isValid = structureState.tickCheck(level);
             setFormed(isValid);
-            if (isValid) {
-                onFormed();
-
-            }
         }
     }
 
@@ -186,7 +178,6 @@ public abstract class BlockEntityAbstractController extends BlockEntity implemen
     }
 
     public void onDeformed(boolean isRemoved) {
-        FantasyStructure.LOGGER.info("Deforming structure");
         structureState.notifyAllComponents(!isRemoved && formed);
     }
 
@@ -199,6 +190,9 @@ public abstract class BlockEntityAbstractController extends BlockEntity implemen
 
     /**
      * Children should override this to implement their own UI.
+     * Default implementation returns a basic UI with a player inventory.
+     *
+     * @return The root widget of the UI
      */
     protected WidgetGroup createUI() {
         var root = new WidgetGroup();
@@ -247,6 +241,10 @@ public abstract class BlockEntityAbstractController extends BlockEntity implemen
     protected void setFormed(boolean formed) {
         if(this.formed == formed) return;
         this.formed = formed;
+
+        if(formed) onFormed();
+        else onDeformed(false);
+
         setChanged();
 
         if(level != null && !level.isClientSide) {

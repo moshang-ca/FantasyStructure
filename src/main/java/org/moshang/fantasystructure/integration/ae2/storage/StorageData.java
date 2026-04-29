@@ -13,7 +13,6 @@ import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
-import org.moshang.fantasystructure.FantasyStructure;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -48,7 +47,6 @@ public class StorageData implements MEStorage {
         data.maxBytes = buf.readLong();
         data.usedTypes = buf.readLong();
         data.usedBytes = buf.readLong();
-        FantasyStructure.LOGGER.info("client get used bytes {}, used types {}", data.usedBytes, data.usedTypes);
         return data;
     }
 

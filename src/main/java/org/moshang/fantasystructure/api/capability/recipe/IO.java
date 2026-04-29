@@ -2,6 +2,7 @@ package org.moshang.fantasystructure.api.capability.recipe;
 
 import lombok.Getter;
 import net.minecraft.util.StringRepresentable;
+import org.jetbrains.annotations.NotNull;
 
 @Getter
 public enum IO implements StringRepresentable {
@@ -19,6 +20,7 @@ public enum IO implements StringRepresentable {
     }
 
     @Override
+    @NotNull
     public String getSerializedName() {
         return name;
     }

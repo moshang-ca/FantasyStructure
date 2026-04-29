@@ -1,32 +1,22 @@
 package org.moshang.fantasystructure.api.recipe;
 
-import com.lowdragmc.lowdraglib.Platform;
 import com.lowdragmc.lowdraglib.syncdata.IEnhancedManaged;
-import com.lowdragmc.lowdraglib.syncdata.ISubscription;
 import com.lowdragmc.lowdraglib.syncdata.annotation.DescSynced;
 import com.lowdragmc.lowdraglib.syncdata.annotation.Persisted;
 import com.lowdragmc.lowdraglib.syncdata.annotation.RequireRerender;
 import com.lowdragmc.lowdraglib.syncdata.field.FieldManagedStorage;
 import com.lowdragmc.lowdraglib.syncdata.field.ManagedFieldHolder;
+import com.mojang.datafixers.util.Pair;
 import lombok.Getter;
 import lombok.Setter;
-import net.minecraft.Util;
-import net.minecraft.world.item.crafting.RecipeManager;
 import org.jetbrains.annotations.Nullable;
 import org.moshang.fantasystructure.api.blockentity.IRecipeMachine;
 import org.moshang.fantasystructure.api.capability.recipe.IO;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.CompletableFuture;
-
-@SuppressWarnings("CallToPrintStackTrace")
 public class RecipeLogic implements IEnhancedManaged {
     public enum Status {
-        IDLE, WORKING, SUSPEND
+        IDLE, WORKING, BLOCKED, SUSPEND
     }
-
-    private static final int MAX_FAILURE = 40;
 
     @Getter
     private final FieldManagedStorage syncStorage = new FieldManagedStorage(this);
@@ -37,15 +27,13 @@ public class RecipeLogic implements IEnhancedManaged {
 
     @Getter
     private final IRecipeMachine machine;
-    /**
-     * Listeners will be called when the machine is woken up
-     */
-    private final List<Runnable> wakeupListener = new ArrayList<>();
 
-    private int failures = 0;
-    private boolean isSleep = false;
+    @Setter @Getter
+    private int parallel = 0;
+    private final MultiRecipeThread parent;
+    @Getter
+    private final String name;
 
-    private List<FSRecipe> failedMatches;
     @Nullable @Getter @Setter @Persisted
     protected FSRecipe lastRecipe;
     /**
@@ -59,12 +47,12 @@ public class RecipeLogic implements IEnhancedManaged {
     protected int duration;
     @Getter
     protected boolean recipeDirty;
-    @Nullable
-    protected CompletableFuture<List<FSRecipe>> completableFuture = null;
 
-    public RecipeLogic(IRecipeMachine machine, boolean formed) {
+    public RecipeLogic(IRecipeMachine machine, MultiRecipeThread parent, String name) {
         this.machine = machine;
-        setStatus(formed);
+        setStatus(true);
+        this.parent = parent;
+        this.name = name;
     }
 
     public void resetRecipeLogic() {
@@ -73,17 +61,11 @@ public class RecipeLogic implements IEnhancedManaged {
         lastOriginalRecipe = null;
         progress = 0;
         duration = 0;
-        failedMatches = null;
         setStatus(Status.IDLE);
     }
 
     public double getProgressPercent() {
         return duration == 0 ? .0d : progress / (duration * 1.0);
-    }
-
-    @SuppressWarnings("DataFlowIssue")
-    public RecipeManager getRecipeManager() {
-        return Platform.getMinecraftServer().getRecipeManager();
     }
 
     @Override
@@ -108,40 +90,11 @@ public class RecipeLogic implements IEnhancedManaged {
                     handleRecipeWorking();
                 }
                 if (isIdle() || duration == 0) {
-                } else if (progress >= duration) {
+                } else if (isBlocked() || progress >= duration) {
                     onRecipeFinish();
                 }
-            } else if (lastRecipe != null) {
-                findAndHandleRecipe();
-            } else if (!isSleep && getMachine().getOffsetTimer() % 5 == 0) {
-                findAndHandleRecipe();
-                if (failedMatches != null) {
-                    for (var recipe : failedMatches) {
-                        if (checkMatchedRecipeAvailable(recipe)) break;
-                    }
-                }
-            }
-        } else {
-            if(completableFuture != null) {
-                completableFuture.cancel(true);
-                completableFuture = null;
             }
         }
-    }
-
-    private boolean checkMatchedRecipeAvailable(FSRecipe recipe) {
-        var modified = machine.doModifyRecipe(recipe);
-        if(modified != null) {
-            if(modified.matchRecipe(machine).isSuccess() && modified.matchTickRecipe(machine).isSuccess()) {
-                setupRecipe(modified);
-            }
-            if(lastRecipe != null && getStatus() == Status.WORKING) {
-                lastOriginalRecipe = recipe;
-                failedMatches = null;
-                return true;
-            }
-        }
-        return false;
     }
 
     public void handleRecipeWorking() {
@@ -166,77 +119,15 @@ public class RecipeLogic implements IEnhancedManaged {
         return FSRecipe.ActionResult.SUCCESS;
     }
 
-    private List<FSRecipe> searchRecipe() {
-        return machine.getRecipeType().searchRecipes(getRecipeManager(), machine);
-    }
-
-    public void findAndHandleRecipe() {
-        if(isSleep) return;
-
-        failedMatches = null;
-        boolean foundRecipe = false;
-        if(!recipeDirty && lastRecipe != null &&
-                lastRecipe.matchRecipe(machine).isSuccess() &&
-                lastRecipe.matchTickRecipe(machine).isSuccess()) {         // Try last success recipe first.
-            FSRecipe recipe = lastRecipe;
-            lastRecipe = null;
-            lastOriginalRecipe = null;
-            foundRecipe = setupRecipe(recipe);
-        } else {
-            lastRecipe = null;
-            lastOriginalRecipe = null;
-            if(completableFuture == null) {
-                completableFuture = supplyAsyncSearchTask();
-            } else if(completableFuture.isDone()) {
-                var lastFuture = completableFuture;
-                completableFuture = null;
-                if(!lastFuture.isCancelled()) {
-                    try {
-                        var matches = lastFuture.join().stream()
-                                .toList();
-                        matches = matches.stream().filter(match -> match.matchRecipe(machine).isSuccess()).toList();
-                        if(!matches.isEmpty()) {
-                            foundRecipe = handleSearchingRecipe(matches);
-                        }
-                    } catch (Throwable ex) {
-                        ex.printStackTrace();
-                        completableFuture = supplyAsyncSearchTask();
-                    }
-                } else {
-                    foundRecipe = handleSearchingRecipe(searchRecipe());
-                }
-            }
-            recipeDirty = false;
-        }
-        if(foundRecipe) {
-            success();
-        } else {
-            failure();
-        }
-    }
-
-    private CompletableFuture<List<FSRecipe>> supplyAsyncSearchTask() {
-        return CompletableFuture.supplyAsync(Util.wrapThreadWithTaskName("search recipe", this::searchRecipe), Util.backgroundExecutor());
-    }
-
-    private boolean handleSearchingRecipe(List<FSRecipe> recipes) {
-        for(var recipe : recipes) {
-            if(checkMatchedRecipeAvailable(recipe)) return true;
-            if(failedMatches == null) {
-                failedMatches = new ArrayList<>();
-            }
-            failedMatches.add(recipe);
-        }
-        return false;
-    }
-
-    public boolean setupRecipe(FSRecipe recipe) {
+    public boolean setupRecipe(Pair<FSRecipe, Integer> recipeData) {
+        var recipe = recipeData.getFirst();
         if(recipe.handleRecipeIO(IO.IN, machine)) {
             recipeDirty = false;
             lastRecipe = recipe;
             setStatus(Status.WORKING);
             progress = 0;
             duration = recipe.duration();
+            parallel = recipeData.getSecond();
             return true;
         }
         return false;
@@ -252,33 +143,17 @@ public class RecipeLogic implements IEnhancedManaged {
 
     private void onRecipeFinish() {
         if(lastRecipe != null) {
-            lastRecipe.handleRecipeIO(IO.OUT, machine);
-            if(!recipeDirty) {
-                if(lastOriginalRecipe != null) {
-                    var modified = machine.doModifyRecipe(lastOriginalRecipe);
-                    if(modified != null) {
-                        lastRecipe = modified;
-                    } else {
-                        markLastRecipeDirty();
-                    }
-                } else {
-                    markLastRecipeDirty();
-                }
-            }
-            if(!recipeDirty &&
-                    lastRecipe.matchRecipe(machine).isSuccess() &&
-                    lastRecipe.matchTickRecipe(machine).isSuccess()) {
-                setupRecipe(lastRecipe);
-            } else {
-                setStatus(Status.IDLE);
+            if(lastRecipe.handleRecipeIO(IO.OUT, machine)) {
+                lastRecipe = null;
                 progress = 0;
                 duration = 0;
+                if (parent != null) {
+                    parent.onLogicComplete(this, lastOriginalRecipe);
+                }
+            } else {
+                setStatus(Status.BLOCKED);
             }
         }
-    }
-
-    public void markLastRecipeDirty() {
-        recipeDirty = true;
     }
 
     public void setStatus(Status status) {
@@ -303,10 +178,6 @@ public class RecipeLogic implements IEnhancedManaged {
         }
     }
 
-    public boolean isActive() {
-        return isWorking() || (isSuspend() && lastRecipe != null && duration > 0);
-    }
-
     public boolean isWorking() {
         return status == Status.WORKING;
     }
@@ -319,34 +190,7 @@ public class RecipeLogic implements IEnhancedManaged {
         return status == Status.SUSPEND;
     }
 
-    public ISubscription addWakeupListener(Runnable runnable) {
-        wakeupListener.add(runnable);
-        return () -> wakeupListener.remove(runnable);
-    }
-
-    public void wakeUp() {
-        if(isSleep) {
-            isSleep = false;
-            failures = 0;
-            findAndHandleRecipe();
-        }
-    }
-
-    private void failure() {
-        failures++;
-        if(failures >= MAX_FAILURE) {
-            sleep();
-        }
-    }
-
-    private void success() {
-        failures = 0;
-        if(isSleep) {
-            isSleep = false;
-        }
-    }
-
-    private void sleep() {
-        isSleep = true;
+    public boolean isBlocked() {
+        return status == Status.BLOCKED;
     }
 }

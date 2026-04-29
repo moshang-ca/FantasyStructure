@@ -72,6 +72,7 @@ public class SizedIngredient extends Ingredient {
     }
 
     @Override
+    @NotNull
     public IIngredientSerializer<? extends Ingredient> getSerializer() {
         return SERIALIZER;
     }
@@ -129,7 +130,7 @@ public class SizedIngredient extends Ingredient {
             try {
                 inner = Ingredient.fromJson(json.get("ingredient"));
             } catch (Exception e) {
-                LDLib.LOGGER.error("Failed to parse ingredient from json: " + json, e);
+                LDLib.LOGGER.error("Failed to parse ingredient from json: {}", json, e);
                 inner = Ingredient.EMPTY;
             }
             return new SizedIngredient(inner, amount);
