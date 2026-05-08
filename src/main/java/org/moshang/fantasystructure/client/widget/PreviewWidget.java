@@ -33,12 +33,13 @@ public class PreviewWidget extends WidgetGroup {
     private static final Map<FSStructureDefinitions.StructureDefinition, BlockPos> CACHE = new HashMap<>();
     private static final Map<FSStructureDefinitions.StructureDefinition, StructurePattern> PATTERN_CACHE = new HashMap<>();
 
-    private BlockPos inWorldPos;
+    private final BlockPos inWorldPos;
     private final StructurePattern pattern;
     private final SceneWidget sceneWidget;
+    private final PageScrollableWidget platteWidget;
     private final PageScrollableWidget scrollableWidget;
-    // private final CycleItemStackHandler materialsItemHandler;
     private final ExtendedItemStackHandler materialsItemHandler;
+    private final ExtendedItemStackHandler platteItemHandler;
     private final FSStructureDefinitions.StructureDefinition definition;
 
     protected PreviewWidget(FSStructureDefinitions.StructureDefinition definition) {
@@ -78,6 +79,18 @@ public class PreviewWidget extends WidgetGroup {
             scrollableWidget.addWidget(slot);
         }
         addWidget(scrollableWidget);
+
+        this.platteWidget = new PageScrollableWidget(3 + 3, 22 + 1, 18, 154 - 45)
+                .setBackground(ColorPattern.T_BLACK.rectTexture());
+        this.platteWidget.setVisible(false);
+        NonNullList<ItemStack> platte = NonNullList.withSize(6, ItemStack.EMPTY);
+        this.platteItemHandler = new ExtendedItemStackHandler(platte);
+        for(int i = 0; i < 6; ++i) {
+            platteWidget.addWidget(new SlotWidget(ItemTransferHelperImpl.toItemTransfer(platteItemHandler), i, 0, i * 18, false, false)
+                            .setBackgroundTexture(ColorPattern.T_BLACK.rectTexture())
+                            .setIngredientIO(IngredientIO.INPUT));
+        }
+        addWidget(platteWidget);
 
         setup();
     }
@@ -157,7 +170,20 @@ public class PreviewWidget extends WidgetGroup {
         return new PreviewWidget(definition);
     }
 
-    private void onPosSelected(BlockPos pos, Direction facing) {}
+    private void onPosSelected(BlockPos pos, Direction facing) {
+        var relative = pos.subtract(inWorldPos);
+        var info = pattern.blockPattern().get(relative.asLong());
+        if(info != null) {
+            NonNullList<ItemStack> items = NonNullList.create();
+            info.getAllowedStates().stream()
+                    .map(state -> new ItemStack(state.getBlock()))
+                    .forEach(items::add);
+            platteItemHandler.updateStacks(items);
+            if(!platteWidget.isVisible()) {
+                platteWidget.setVisible(true);
+            }
+        }
+    }
 
     @Override
     public void drawInBackground(@NotNull GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {

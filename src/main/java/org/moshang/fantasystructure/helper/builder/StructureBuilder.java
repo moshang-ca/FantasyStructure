@@ -4,11 +4,9 @@ import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import lombok.Getter;
 import net.minecraft.core.BlockPos;
-import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
@@ -65,44 +63,40 @@ public class StructureBuilder {
         while(!taskQueue.isEmpty() && placed < BLOCKS_PER_TICK) {
             var entry = taskQueue.poll();
             BlockInfo blockInfo = entry.getValue();
-            BlockState targetState = blockInfo.getExpectedState();
-            if(targetState.isAir()) continue;
+            List<BlockState> targetStates = blockInfo.getAllowedStates();
+            if(blockInfo.isAir()) continue;
             BlockPos worldPos = center.offset(BlockPos.of(entry.getLongKey()));
-            Set<TagKey<Block>> blockTagKeys = blockInfo.getAllowedTags();
 
             BlockState state = level.getBlockState(worldPos);
             if(!state.isAir()) {
-                if(!state.equals(targetState)) {
-                    for(var tagKey : blockTagKeys) {
-                        if(!state.is(tagKey)) {
-                            failedBlock.put(entry.getLongKey(), entry.getValue());
-                            placed++;
-                        }
-                    }
+                if(!blockInfo.matches(level, worldPos)) {
+                    failedBlock.put(entry.getLongKey(), entry.getValue());
+                    placed++;
                 }
                 continue;
             }
 
             if(!isCreative) {
-                var fluidState = targetState.getFluidState();
-                if(fluidState.isEmpty()) {
-                    ItemStack materialStack = ItemAutoBuilder.shrinkMaterials(level, builderStack, blockTagKeys, targetState);
-                    if (materialStack != null && materialStack.getItem() instanceof BlockItem blockItem) {
-                        BlockState materialState = blockInfo.createTagBlockState(blockItem.getBlock());
-                        if (!level.setBlock(worldPos, materialState, 2)) {
-                            failedBlock.put(entry.getLongKey(), entry.getValue());
+                for(var targetState : targetStates) {
+                    var fluidState = targetState.getFluidState();
+                    if (fluidState.isEmpty()) {
+                        ItemStack materialStack = ItemAutoBuilder.shrinkMaterials(level, builderStack, targetState);
+                        if (materialStack.getItem() instanceof BlockItem) {
+                            if (!level.setBlock(worldPos, targetState, 2)) {
+                                failedBlock.put(entry.getLongKey(), entry.getValue());
+                            } else break;
                         }
-                    }
-                } else {
-                    Fluid fluid = ItemAutoBuilder.shrinkMaterials(level, builderStack, fluidState);
-                    if(!fluid.isSame(Fluids.EMPTY)) {
-                        if(!level.setBlock(worldPos, fluid.defaultFluidState().createLegacyBlock(), 2)) {
-                            failedBlock.put(entry.getLongKey(), entry.getValue());
+                    } else {
+                        Fluid fluid = ItemAutoBuilder.shrinkMaterials(level, builderStack, fluidState);
+                        if (!fluid.isSame(Fluids.EMPTY)) {
+                            if (!level.setBlock(worldPos, fluid.defaultFluidState().createLegacyBlock(), 2)) {
+                                failedBlock.put(entry.getLongKey(), entry.getValue());
+                            } else break;
                         }
                     }
                 }
             } else {
-                if (!level.setBlock(worldPos, targetState, 2)) {
+                if (!level.setBlock(worldPos, targetStates.get(0), 2)) {
                     failedBlock.put(entry.getLongKey(), entry.getValue());
                 }
             }

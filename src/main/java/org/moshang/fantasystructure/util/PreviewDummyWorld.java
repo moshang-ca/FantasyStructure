@@ -75,7 +75,7 @@ public class PreviewDummyWorld extends DummyWorld {
     }
 
     public void addBlock(BlockPos pos, BlockInfo blockInfo) {
-        if (blockInfo.getExpectedState().isAir())
+        if (blockInfo.getAllowedStates().isEmpty())
             return;
         this.renderedBlocks.put(pos, blockInfo);
         this.blockEntities.remove(pos);
@@ -118,7 +118,7 @@ public class PreviewDummyWorld extends DummyWorld {
         if (renderFilter != null && !renderFilter.test(pos))
             return Blocks.AIR.defaultBlockState();
         Level proxy = proxyWorld.get();
-        return proxy != null ? proxy.getBlockState(pos) : renderedBlocks.getOrDefault(pos, BlockInfo.EMPTY).getExpectedState();
+        return proxy != null ? proxy.getBlockState(pos) : renderedBlocks.getOrDefault(pos, BlockInfo.EMPTY).getAllowedStates().get(0);
     }
 
     @Override

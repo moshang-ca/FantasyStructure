@@ -1,156 +1,62 @@
 package org.moshang.fantasystructure.helper.blueprint;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 import com.mojang.logging.LogUtils;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.material.Fluids;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraftforge.registries.ForgeRegistries;
 import org.moshang.fantasystructure.Config;
 import org.moshang.fantasystructure.api.blockentity.BlockEntityAbstractController;
 import org.slf4j.Logger;
 
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.nio.channels.FileChannel;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.function.BiConsumer;
 
 public class BlueprintEditor {
-    private static ExecutorService EXPORTING_THREAD_POOL;
-
+    private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final Logger LOGGER = LogUtils.getLogger();
+    private static ExecutorService EXPORTING_THREAD_POOL;
 
     public static void init() {
         if(EXPORTING_THREAD_POOL != null) return;
-        int threadCount = (int) (Math.min(Config.MAX_PROCESSOR.get(), Runtime.getRuntime().availableProcessors()) * 1.5);
-        EXPORTING_THREAD_POOL = Executors.newFixedThreadPool(Math.max(threadCount, 1));
-        LOGGER.info("Initialized blueprint editor with {} threads free", threadCount);
+        int threadCnt = (int) Math.min(Config.MAX_PROCESSOR.get(), Runtime.getRuntime().availableProcessors() * 1.5);
+        EXPORTING_THREAD_POOL = Executors.newFixedThreadPool(Math.max(1, threadCnt));
+        LOGGER.info("Initialized Blueprint Editor with {} threads", threadCnt);
     }
 
-    @SuppressWarnings("ResultOfMethodCallIgnored")
-    public static void saveBinary(Path outputFile, int sizeX, int sizeY, int sizeZ,
-                                  byte[][][] voxels, List<String> blockStateTable,
-                                  Set<String> modDependencies, BlockPos controllerOffset) throws IOException {
-        try(FileOutputStream fos = new FileOutputStream(outputFile.toFile());
-            FileChannel channel = fos.getChannel()) {
-            ByteBuffer buffer = ByteBuffer.allocate(1024*1024);
-            buffer.order(ByteOrder.LITTLE_ENDIAN);
-
-            buffer.put("FSPB".getBytes());
-            buffer.putShort((short) 1);
-            buffer.putShort((short) sizeX);
-            buffer.putShort((short) sizeY);
-            buffer.putShort((short) sizeZ);
-            buffer.putInt(0);
-            buffer.putShort((short) blockStateTable.size());
-            buffer.put((byte) 0);
-            buffer.put((byte) modDependencies.size());
-            buffer.putShort((short) controllerOffset.getX());
-            buffer.putShort((short) controllerOffset.getY());
-            buffer.putShort((short) controllerOffset.getZ());
-
-            for(String modId : modDependencies) {
-                byte[] modIdBytes = modId.getBytes();
-                buffer.put((byte) modIdBytes.length);
-                buffer.put(modIdBytes);
-            }
-
-            while(buffer.position() < 128) {
-                buffer.put((byte) 0);
-            }
-
-            List<String> platte = blockStateTable;
-            for(String blockState : platte) {
-                byte[] stateBytes = blockState.getBytes();
-                buffer.put((byte) stateBytes.length);
-                buffer.put(stateBytes);
-                buffer.put((byte) 0);
-            }
-
-            int dataOffset = buffer.position();
-            buffer.putInt(12, dataOffset);
-
-            for(int y = 0; y < sizeY; y++) {
-                for(int z = 0; z < sizeZ; z++) {
-                    int x = 0;
-                    while (x < sizeX) {
-                        byte current = voxels[y][z][x];
-                        int runLength = 1;
-
-                        while (x + runLength < sizeX &&
-                                voxels[y][z][x + runLength] == current &&
-                                runLength < 127) {
-                            runLength++;
-                        }
-
-                        buffer.put((byte) -runLength);
-                        buffer.put(current);
-                        x += runLength;
-                    }
-                }
-            }
-            buffer.flip();
-            channel.write(buffer);
-        }
-    }
-
-    public static boolean exportRegionToBlueprint(Level level, BlockPos pos1, BlockPos pos2,
-                                               String name, Path outputFile) throws IOException {
-        ExtractionInfo info = extractVoxels(level, pos1, pos2);
-        BlockPos minCorner = info.minCorner();
-        BlockPos controllerPos = info.controllerPos();
-        if (controllerPos == null) {
-            return false;
+    public static void export(Level level, BlockPos pos1, BlockPos pos2,
+                                 String registryName, String localizedName,
+                                 Path outputFile, BiConsumer<Boolean, String> callback){
+        final ExtractionInfo result = extractStructure(level, pos1, pos2);
+        if(result.controllerPos == null) {
+            callback.accept(false, "Cannot find controller");
+            return;
         }
 
-        BlockPos controllerOffset = controllerPos.subtract(minCorner);
-        Set<String> modDependencies = extractModDependencies(new HashSet<>(info.blockStateTable()));
-        saveBinary(
-                outputFile,
-                info.sizeX(), info.sizeY(), info.sizeZ(),
-                info.voxels(), info.blockStateTable(), modDependencies, controllerOffset
-        );
-        return true;
-    }
-
-
-    /**
-     * This function is used to export fspb files,
-     * converting them into json file
-     * @param names All fspb file name you need to export,
-     *              needn't have name extension.
-     */
-    public static void exportToJson(String... names) {
-        for(String name : names) {
-            if(!name.contains(".fspb")) {
-                name = name + ".fspb";
+        EXPORTING_THREAD_POOL.submit(() -> {
+            try {
+                JsonObject root = buildJsonObject(result, registryName, localizedName);
+                Files.writeString(outputFile, GSON.toJson(root));
+                callback.accept(true, outputFile.toString());
+            } catch (IOException e) {
+                callback.accept(false, e.getMessage());
             }
-        }
+        });
     }
 
-    private static Set<String> extractModDependencies(Set<String> blockIds) {
-        Set<String> modIds = new HashSet<>();
-        for (String blockId : blockIds) {
-            if (blockId.contains(":")) {
-                blockId = blockId.substring(
-                        blockId.indexOf('{') + 1,
-                        blockId.indexOf('}')
-                );
-                String modId = blockId.split(":")[0];
-                if (!"minecraft".equals(modId)) {
-                    modIds.add(modId);
-                }
-            }
-        }
-        return modIds;
-    }
-
-    private static ExtractionInfo extractVoxels(Level level, BlockPos pos1, BlockPos pos2) {
+    private static ExtractionInfo extractStructure(Level level, BlockPos pos1, BlockPos pos2) {
         int minX = Math.min(pos1.getX(), pos2.getX());
         int minY = Math.min(pos1.getY(), pos2.getY());
         int minZ = Math.min(pos1.getZ(), pos2.getZ());
@@ -164,69 +70,100 @@ public class BlueprintEditor {
 
         BlockPos minCorner = new BlockPos(minX, minY, minZ);
 
-        Map<String, Byte> blockIdToIndex = new LinkedHashMap<>();
-        byte nextIndex = 1;
-
-        byte[][][] voxels = new byte[sizeY][sizeZ][sizeX];
-
-        boolean hasController = false;
+        Map<BlockPos, BlockEntry> positionBlocks = new HashMap<>();
         BlockPos controllerPos = null;
+        Direction controllerFacing = Direction.NORTH;
 
-        for(int y = 0; y < sizeY; y++) {
-            for(int z = 0; z < sizeZ; z++) {
-                for(int x = 0; x < sizeX; x++) {
+        for (int y = 0; y < sizeY; y++) {
+            for (int z = 0; z < sizeZ; z++) {
+                for (int x = 0; x < sizeX; x++) {
                     BlockPos worldPos = minCorner.offset(x, y, z);
                     BlockState blockState = level.getBlockState(worldPos);
                     BlockEntity be = level.getBlockEntity(worldPos);
 
-                    if(!hasController) {
-                        if(be instanceof BlockEntityAbstractController) {
-                            controllerPos = worldPos;
-                            hasController = true;
-                        }
+                    if (controllerPos == null && be instanceof BlockEntityAbstractController) {
+                        controllerPos = worldPos;
+                        controllerFacing = be.getBlockState().getValue(BlockStateProperties.HORIZONTAL_FACING);
                     }
 
-                    if(blockState.isAir()) {
-                        voxels[y][z][x] = 0;
+                    if (blockState.isAir()) {
                         continue;
-                    } else {
-                        var fluidState = blockState.getFluidState();
-                        if(!fluidState.isEmpty()) {
-                            if(fluidState.getType() == Fluids.FLOWING_WATER) {
-                                throw new IllegalStateException("The structure can not have flowing fluid in definition");
-                            }
-                        }
                     }
 
-                    String blockStateStr = blockState.toString();
-                    Byte index = blockIdToIndex.get(blockStateStr);
-                    if(index == null) {
-                        index = nextIndex++;
-                        if(index == 0) {
-                            index = nextIndex++;
-                        }
-                        blockIdToIndex.put(blockStateStr, index);
-                    }
-                    voxels[y][z][x] = index;
+                    String blockId = Objects.requireNonNull(
+                            ForgeRegistries.BLOCKS.getKey(blockState.getBlock())).toString();
+                    var properties = extractProps(blockState);
+                    BlockPos relativePos = new BlockPos(x, y, z);
+
+                    positionBlocks.put(relativePos, new BlockEntry(blockId, properties));
                 }
             }
         }
 
-        List<String> blockStateTable = new ArrayList<>(blockIdToIndex.size() + 1);
-        blockStateTable.add(0, "Block{minecraft:air}");
-        blockIdToIndex.entrySet().stream()
-                .sorted(Map.Entry.comparingByValue())
-                .forEachOrdered(entry -> {
-                    while(blockStateTable.size() <= entry.getValue()) {
-                        blockStateTable.add(null);
-                    }
-                    blockStateTable.set(entry.getValue(), entry.getKey());
-                });
-
-        return new ExtractionInfo(voxels, blockStateTable, minCorner, controllerPos, sizeX, sizeY, sizeZ);
+        return new ExtractionInfo(positionBlocks, controllerPos, controllerFacing, minCorner, sizeX, sizeY, sizeZ);
     }
 
-    private record ExtractionInfo(byte[][][] voxels, List<String> blockStateTable, BlockPos minCorner,
-                                  BlockPos controllerPos, int sizeX, int sizeY, int sizeZ) {
+    private static Map<String, String> extractProps(BlockState state) {
+        Map<String, String> props = new HashMap<>();
+        var defaultState = state.getBlock().defaultBlockState();
+        for(var property : state.getProperties()) {
+            var value = state.getValue(property);
+            if(!defaultState.getValue(property).equals(value)) {
+                props.put(property.getName(), value.toString());
+            }
+        }
+        return props;
     }
+
+    private static JsonObject buildJsonObject(ExtractionInfo result, String registryName, String localizedName) {
+        JsonObject root = new JsonObject();
+        root.addProperty("registry_name", registryName);
+        root.addProperty("localized_name", localizedName);
+
+        JsonArray sizes = new JsonArray();
+        sizes.add(result.sizeX);
+        sizes.add(result.sizeY);
+        sizes.add(result.sizeZ);
+        root.add("sizes", sizes);
+
+        BlockPos controllerOffset = result.controllerPos.subtract(result.minCorner);
+        JsonArray controllerArray = new JsonArray();
+        controllerArray.add(controllerOffset.getX());
+        controllerArray.add(controllerOffset.getY());
+        controllerArray.add(controllerOffset.getZ());
+        root.add("controller_offset", controllerArray);
+
+        root.addProperty("original_direction", result.controllerFacing.getName());
+
+        JsonArray partsArray = new JsonArray();
+        for(var entry : result.positionBlocks.entrySet()) {
+            BlockPos pos = entry.getKey();
+            BlockEntry blockEntry = entry.getValue();
+
+            JsonObject part = new JsonObject();
+            part.addProperty("x", pos.getX());
+            part.addProperty("y", pos.getY());
+            part.addProperty("z", pos.getZ());
+
+            JsonArray blocksArray = new JsonArray();
+            blocksArray.add(blockEntry.BlockId);
+            part.add("blocks", blocksArray);
+
+            JsonObject propsObject = new JsonObject();
+            for(var prop : blockEntry.props.entrySet()) {
+                propsObject.addProperty(prop.getKey(), prop.getValue());
+            }
+            part.add("props", propsObject);
+
+            partsArray.add(part);
+        }
+        root.add("parts", partsArray);
+
+        return root;
+    }
+
+    private record ExtractionInfo(Map<BlockPos, BlockEntry> positionBlocks, BlockPos controllerPos,
+                                  Direction controllerFacing, BlockPos minCorner, int sizeX, int sizeY, int sizeZ) { }
+
+    private record BlockEntry(String BlockId, Map<String, String> props) { }
 }

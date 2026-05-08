@@ -36,7 +36,13 @@ public class ExtendedItemStackHandler extends ItemStackHandler implements ITagSe
     }
 
     public void updateStacks(NonNullList<ItemStack> stacks) {
-        this.stacks = stacks;
+        for(int i = 0; i < this.stacks.size(); i++) {
+            if(i < stacks.size()) {
+                this.stacks.set(i, stacks.get(i));
+            } else {
+                this.stacks.set(i, ItemStack.EMPTY);
+            }
+        }
     }
 
     @Override

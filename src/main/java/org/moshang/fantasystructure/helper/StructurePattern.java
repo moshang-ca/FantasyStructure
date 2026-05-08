@@ -8,6 +8,9 @@ import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.state.BlockState;
 import org.moshang.fantasystructure.data.BlockInfo;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Save structure pattern, using relative position.
  * @param blockPattern pattern from blueprint
@@ -79,9 +82,16 @@ public record StructurePattern(Long2ObjectOpenHashMap<BlockInfo> blockPattern, B
             return from;
         }
 
-        BlockState state = from.getExpectedState();
+        BlockState state = from.getAllowedStates().get(0);
         BlockState rotatedState = state.rotate(rotation);
-
-        return state == rotatedState ? from : new BlockInfo(rotatedState);
+        if(state != rotatedState) {
+            List<BlockState> states = new ArrayList<>();
+            for (BlockState allowedState : from.getAllowedStates()) {
+                var rotated = allowedState.rotate(rotation);
+                states.add(rotated);
+            }
+            return new BlockInfo(states);
+        }
+        return from;
     }
 }

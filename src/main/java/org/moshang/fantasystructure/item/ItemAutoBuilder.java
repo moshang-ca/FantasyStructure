@@ -111,7 +111,7 @@ public class ItemAutoBuilder extends Item {
         return false;
     }
 
-    public static ItemStack shrinkMaterials(Level level, ItemStack stack, Set<TagKey<Block>> blockTagKeys, BlockState blockState) {
+    public static ItemStack shrinkMaterials(Level level, ItemStack stack, BlockState blockState) {
         List<BlockPos> containerPositions = loadTag(stack);
         for(BlockPos pos : containerPositions) {
             if(!level.isLoaded(pos)) continue;
@@ -131,12 +131,6 @@ public class ItemAutoBuilder extends Item {
                         if(item instanceof BlockItem blockItem) {
                             if(blockState.is(blockItem.getBlock())) {
                                 return itemHandler.extractItem(i, 1, false);
-                            } else {
-                                for(TagKey<Block> tagKey : blockTagKeys) {
-                                    if(blockItem.getBlock().defaultBlockState().is(tagKey)) {
-                                        return itemHandler.extractItem(i, 1, false);
-                                    }
-                                }
                             }
                         }
                     }

@@ -88,6 +88,13 @@ public abstract class BlockEntityAbstractController extends BlockEntity
         this.upgradeInv.setOnContentsChanged(this::onUpgrade);
     }
 
+    public void reload() {
+        setFormed(false);
+        this.structureState = null;
+        this.pattern = null;
+        this.patternFuture = null;
+    }
+
     @Override
     public void onLoad() {
         super.onLoad();

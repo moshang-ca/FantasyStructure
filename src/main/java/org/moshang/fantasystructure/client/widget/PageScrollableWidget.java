@@ -5,7 +5,6 @@ import com.lowdragmc.lowdraglib.gui.widget.WidgetGroup;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
-import org.moshang.fantasystructure.FantasyStructure;
 
 import java.util.function.Consumer;
 
@@ -24,6 +23,7 @@ public class PageScrollableWidget extends WidgetGroup {
 
     @Override
     public boolean mouseWheelMove(double mouseX, double mouseY, double wheelDelta) {
+        if(onScroll == null) return false;
         if (this.isMouseOverElement(mouseX, mouseY)) {
             if (super.mouseWheelMove(mouseX, mouseY, wheelDelta)) {
                 setFocus(true);

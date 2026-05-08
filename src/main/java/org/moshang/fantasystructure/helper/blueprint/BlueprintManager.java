@@ -4,6 +4,7 @@ import com.mojang.logging.LogUtils;
 import lombok.Getter;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.Item;
 import org.moshang.fantasystructure.Config;
 import org.moshang.fantasystructure.FantasyStructure;
 import org.moshang.fantasystructure.helper.StructurePattern;
@@ -14,12 +15,10 @@ import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
+import java.util.concurrent.*;
+import java.util.function.BiConsumer;
 
-@SuppressWarnings("removal")
+@SuppressWarnings({"removal", "CallToPrintStackTrace"})
 public class BlueprintManager {
     private static final Map<ResourceLocation, Blueprint> REGISTRY = new ConcurrentHashMap<>();
 
@@ -41,58 +40,85 @@ public class BlueprintManager {
 
         if(initialized) return;
 
+        try {
+            var stat = loadBlueprints(configDir, REGISTRY);
+            totalFiles = stat.totalFiles;
+            loadedCounts = stat.loaded;
+            skippedCounts = stat.skipped;
+            LOGGER.info("Loaded {} blueprints, skipped {} blueprints, total {} blueprints", loadedCounts, skippedCounts, totalFiles);
+        } catch (Exception ex) {
+            LOGGER.error("Failed to load blueprints", ex);
+        }
+        initialized = true;
+    }
+
+    public static void reload(Path configDir, BiConsumer<Boolean, String> callback) {
+        LOADING_THREAD_POOL.submit(() -> {
+            try {
+                Map<ResourceLocation, Blueprint> newRegistry = new ConcurrentHashMap<>();
+                var result = loadBlueprints(configDir, newRegistry);
+
+                synchronized (BlueprintManager.class) {
+                    REGISTRY.clear();
+                    REGISTRY.putAll(newRegistry);
+                    totalFiles = result.totalFiles;
+                    loadedCounts = result.loaded;
+                    skippedCounts = result.skipped;
+                }
+                callback.accept(true, null);
+            } catch (IOException e) {
+                callback.accept(false, e.getMessage());
+            }
+        });
+    }
+
+    private static LoadStat loadBlueprints(Path configDir, Map<ResourceLocation, Blueprint> registry) throws IOException {
+        int newLoaded = 0;
+        int newSkipped = 0;
+        int newTotal = 0;
+
         Path blueprintDir = configDir.resolve("fantasystructure/blueprints");
         try {
             Files.createDirectories(blueprintDir);
 
             List<Path> files = new ArrayList<>();
-            try(DirectoryStream<Path> stream = Files.newDirectoryStream(blueprintDir, "*.fspb")) {
+            try(DirectoryStream<Path> stream = Files.newDirectoryStream(blueprintDir, "*.json")) {
                 stream.forEach(files::add);
             }
+            newTotal = files.size();
 
-            totalFiles = files.size();
-
-            List<Future<LoadResult>> futures = new ArrayList<>();
+            ExecutorCompletionService<LoadResult> completionService = new ExecutorCompletionService<>(LOADING_THREAD_POOL);
             for(Path file : files) {
-                futures.add(LOADING_THREAD_POOL.submit(() -> loadBlueprint(file)));
+                completionService.submit(() -> loadBlueprintInternal(file));
             }
 
-            for(Future<LoadResult> future : futures) {
+            for(int i = 0; i < newTotal; ++i) {
                 try {
-                    LoadResult result = future.get();
+                    LoadResult result = completionService.take().get();
                     if(result.success) {
-                        REGISTRY.put(result.id, result.blueprint);
-                        loadedCounts++;
+                        registry.put(result.id, result.blueprint);
+                        newLoaded++;
                     } else {
-                        skippedCounts++;
+                        newSkipped++;
                     }
                 } catch (Exception e) {
-                    skippedCounts++;
+                    newSkipped++;
+                    LOGGER.error("Blueprint loading execution error", e);
                 }
             }
-
-            initialized = true;
-            LOGGER.info("initialized blueprint manager with {} threads free", threadCount);
         } catch (IOException e) {
             e.printStackTrace();
         }
+        return new LoadStat(newTotal, newLoaded, newSkipped);
     }
 
-    private static boolean contain(Path dir) throws IOException {
-        if (!Files.exists(dir) || !Files.isDirectory(dir)) {
-            return false;
-        }
-        try (DirectoryStream<Path> stream = Files.newDirectoryStream(dir, "*.fspb")) {
-            return stream.iterator().hasNext();
-        }
-    }
 
-    private static LoadResult loadBlueprint(Path file) {
+    private static LoadResult loadBlueprintInternal(Path file) {
         try {
-            String name = file.getFileName().toString().replace(".fspb", "");
+            String name = file.getFileName().toString().replace(".json", "");
             ResourceLocation id = new ResourceLocation(FantasyStructure.MODID, name);
 
-            Blueprint blueprint = Blueprint.fromBinary(id, file);
+            Blueprint blueprint = Blueprint.fromJson(file);
             return new LoadResult(id, blueprint, null);
         } catch (Blueprint.BlueprintLoadException e) {
             e.printStackTrace();
@@ -107,7 +133,6 @@ public class BlueprintManager {
         return Optional.ofNullable(REGISTRY.get(id));
     }
 
-
     public static StructurePattern getPattern(ResourceLocation id, Direction facing) {
         return get(id).map(blueprint -> blueprint.toStructurePattern(facing)).orElse(null);
     }
@@ -116,7 +141,7 @@ public class BlueprintManager {
         return getPattern(id, Direction.NORTH);
     }
 
-    public static Map<ResourceLocation, Integer> getMaterial(ResourceLocation id) {
+    public static Map<List<Item>, Integer> getMaterial(ResourceLocation id) {
         return get(id).map(Blueprint::getMaterialMap).orElse(null);
     }
 
@@ -140,4 +165,6 @@ public class BlueprintManager {
             this.success = blueprint != null;
         }
     }
+
+    private record LoadStat(int totalFiles, int loaded, int skipped) { }
 }
