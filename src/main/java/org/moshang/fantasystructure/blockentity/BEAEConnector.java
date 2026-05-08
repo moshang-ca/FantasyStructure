@@ -9,6 +9,7 @@ import appeng.api.networking.crafting.ICraftingProvider;
 import appeng.api.stacks.KeyCounter;
 import appeng.api.storage.IStorageMounts;
 import appeng.api.storage.IStorageProvider;
+import appeng.blockentity.AEBaseBlockEntity;
 import appeng.blockentity.grid.AENetworkBlockEntity;
 import lombok.Getter;
 import lombok.Setter;
@@ -20,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import org.moshang.fantasystructure.api.blockentity.BlockEntityAbstractController;
 import org.moshang.fantasystructure.api.blockentity.IStructureComponent;
 import org.moshang.fantasystructure.registry.FSBlockEntities;
+import org.moshang.fantasystructure.registry.FSBlocks;
 
 import java.util.List;
 
@@ -34,6 +36,10 @@ public class BEAEConnector extends AENetworkBlockEntity implements IStructureCom
                 .setFlags(GridFlags.REQUIRE_CHANNEL)
                 .addService(IStorageProvider.class, this)
                 .addService(ICraftingProvider.class, this);
+    }
+
+    static {
+        AEBaseBlockEntity.registerBlockEntityItem(FSBlockEntities.AE_CONNECTOR_BE.get(), FSBlocks.AE_CONNECTOR.get().asItem());
     }
 
     @Nullable

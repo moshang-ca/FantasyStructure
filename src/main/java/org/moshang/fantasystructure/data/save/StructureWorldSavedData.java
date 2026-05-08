@@ -95,6 +95,10 @@ public class StructureWorldSavedData extends SavedData {
         return posToControllers.containsKey(pos.asLong());
     }
 
+    public Set<BlockPos> getControllers() {
+        return Collections.unmodifiableSet(controllerToState.keySet());
+    }
+
     @Override
     public @NotNull CompoundTag save(@NotNull CompoundTag pCompoundTag) {
         return pCompoundTag;

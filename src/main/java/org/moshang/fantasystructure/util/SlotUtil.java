@@ -10,19 +10,15 @@ import mezz.jei.api.recipe.RecipeIngredientRole;
 import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.registries.ForgeRegistries;
 import org.moshang.fantasystructure.api.capability.recipe.RecipeCapability;
 import org.moshang.fantasystructure.api.recipe.FSRecipe;
 import org.moshang.fantasystructure.api.recipe.content.Content;
 import org.moshang.fantasystructure.api.recipe.ingredient.FluidIngredient;
 import org.moshang.fantasystructure.api.recipe.ingredient.SizedIngredient;
 import org.moshang.fantasystructure.helper.blueprint.BlueprintManager;
-import org.moshang.fantasystructure.integration.jei.FSStructureInfoCategory;
 import org.moshang.fantasystructure.registry.FSStructureDefinitions;
 
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -117,26 +113,13 @@ public class SlotUtil {
         });
     }
 
-    public static List<ItemStack> getItemByDefinition(FSStructureDefinitions.StructureDefinition definition) {
-        return MATERIAL_CACHE.computeIfAbsent(definition,
-                d -> SlotUtil.getItemByRL(BlueprintManager.getMaterial(definition.patternId())));
+    public static List<ItemStack> getItems(FSStructureDefinitions.StructureDefinition definition) {
+        var materialMap = BlueprintManager.getMaterial(definition.patternId());
+        if(materialMap == null || materialMap.isEmpty()) return Collections.emptyList();
+
+        return materialMap.entrySet().stream()
+                .map(e -> new ItemStack(e.getKey().get(0), e.getValue()))
+                .toList();
     }
 
-    public static List<ItemStack> getItemByRL(Map<ResourceLocation, Integer> mat) {
-        List<ItemStack> items = new ArrayList<>();
-        for(var entry : mat.entrySet()) {
-            var block = ForgeRegistries.BLOCKS.getValue(entry.getKey());
-            if(block != null) {
-                var item = block.asItem();
-                if(item == Items.AIR) {
-                    var fluid = block.defaultBlockState().getFluidState();
-                    if(!fluid.isEmpty()) {
-                        item = fluid.getType().getBucket();
-                    }
-                }
-                items.add(new ItemStack(item, entry.getValue()));
-            }
-        }
-        return items;
-    }
 }

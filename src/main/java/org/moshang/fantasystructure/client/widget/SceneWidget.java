@@ -541,8 +541,8 @@ public class SceneWidget extends WidgetGroup {
                 }
                 return false;
             } else if(button == 1) {
-                double yaw = Math.toRadians(rotationYaw);    // 修复：yaw对应rotationYaw
-                double pitch = Math.toRadians(rotationPitch);  // 修复：pitch对应rotationPitch
+                double yaw = Math.toRadians(rotationYaw);
+                double pitch = Math.toRadians(rotationPitch);
 
                 Vector3f forward = new Vector3f(
                         (float) (Math.cos(pitch) * Math.cos(yaw)),

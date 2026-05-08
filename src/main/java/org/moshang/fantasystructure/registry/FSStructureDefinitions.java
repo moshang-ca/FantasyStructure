@@ -42,7 +42,7 @@ public class FSStructureDefinitions {
         }
 
         public List<ItemStack> getMaterials() {
-            return SlotUtil.getItemByDefinition(this);
+            return SlotUtil.getItems(this);
         }
 
         public static StructureDefinition fromNetwork(FriendlyByteBuf buf) {
