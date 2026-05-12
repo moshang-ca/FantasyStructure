@@ -1,70 +1,51 @@
 package org.moshang.fantasystructure.api.slot;
 
+import com.lowdragmc.lowdraglib.misc.FluidStorage;
 import com.lowdragmc.lowdraglib.side.fluid.FluidStack;
+import com.lowdragmc.lowdraglib.side.fluid.IFluidStorage;
 import com.lowdragmc.lowdraglib.side.fluid.IFluidTransfer;
 import com.lowdragmc.lowdraglib.syncdata.*;
-import com.lowdragmc.lowdraglib.syncdata.annotation.DescSynced;
-import com.lowdragmc.lowdraglib.syncdata.annotation.Persisted;
-import com.lowdragmc.lowdraglib.syncdata.field.FieldManagedStorage;
-import com.lowdragmc.lowdraglib.syncdata.field.ManagedFieldHolder;
 import lombok.Getter;
+import lombok.Setter;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
 import net.minecraft.world.level.material.Fluid;
-import net.minecraft.world.level.material.Fluids;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 import java.util.function.Predicate;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
 @Getter
-@SuppressWarnings({"unchecked", "UnstableApiUsage"})
-public class ExtendedFluidTank implements IFluidTransfer, IManaged {
-    @Getter
-    private final FieldManagedStorage syncStorage = new FieldManagedStorage(this);
-    public static final ManagedFieldHolder MANAGED_FIELD_HOLDER = new ManagedFieldHolder(ExtendedFluidTank.class);
-
-    @Override
-    public ManagedFieldHolder getFieldHolder() {
-        return MANAGED_FIELD_HOLDER;
-    }
-
-    @Override
-    public void onChanged() {
-        onContentChanged.run();
-    }
-
+@SuppressWarnings({"unchecked", "UnstableApiUsage", "UnusedReturnValue"})
+public class ExtendedFluidTank implements IFluidTransfer, IContentChangeAware, ITagSerializable<CompoundTag> {
     private final int tanks;
-    @Persisted @DescSynced
-    private final FluidStack[] stacks;
-    @Persisted
+    private final FluidStorage[] storages;
+    private final FilterStorage[] filters;
     private final long[] capacities;
-    private final Predicate<FluidStack>[] validators;
-    @Persisted @DescSynced
-    private final List<Fluid> filters;
-    private Runnable onContentChanged;
+    @Getter @Setter
+    private Runnable onContentsChanged;
 
-    private ExtendedFluidTank(int tanks, long[] capacities, Predicate<FluidStack>[] validators, Runnable onContentChanged) {
+    private ExtendedFluidTank(int tanks, long[] capacities, Predicate<FluidStack>[] validators, Runnable onContentsChanged) {
         this.tanks = tanks;
-        this.stacks = Stream.generate(FluidStack::empty).limit(tanks).toArray(FluidStack[]::new);
+        this.storages = new FluidStorage[tanks];
+        this.filters = new FilterStorage[tanks];
+        for(int i = 0; i < tanks; i++) {
+            this.storages[i] = new FluidStorage(capacities[i], validators[i]);
+            this.filters[i] = new FilterStorage(i);
+        }
         this.capacities = capacities;
-        this.validators = validators;
-        this.filters = new ArrayList<>(Collections.nCopies(tanks, Fluids.EMPTY));
-        this.onContentChanged = onContentChanged;
+        this.onContentsChanged = onContentsChanged;
     }
 
-    private ExtendedFluidTank(ExtendedFluidTank other) {
-        this.tanks = other.tanks;
-        this.stacks = new FluidStack[other.tanks];
-        for(int i = 0; i < this.tanks; i++) {
-            this.stacks[i] = other.stacks[i].isEmpty() ? FluidStack.empty() : other.stacks[i].copy();
+    private ExtendedFluidTank(FluidStorage[] storages) {
+        this.storages = new FluidStorage[storages.length];
+        this.filters = new FilterStorage[storages.length];
+        for(int i = 0; i < storages.length; i++) {
+            this.storages[i] = ((FluidStorage) storages[i].createSnapshot());
         }
-        this.capacities = other.capacities.clone();
-        this.validators = other.validators.clone();
-        this.filters = new ArrayList<>(other.filters);
-        this.onContentChanged = other.onContentChanged;
+        this.capacities = Stream.of(storages).mapToLong(FluidStorage::getCapacity).toArray();
+        this.tanks = storages.length;
     }
 
     public static ExtendedFluidTank create(int tanks, long capacity) {
@@ -82,51 +63,34 @@ public class ExtendedFluidTank implements IFluidTransfer, IManaged {
         return new ExtendedFluidTank(tanks, capacities, validators, onContentsChanged);
     }
 
-    @SuppressWarnings("UnusedReturnValue")
-    public ExtendedFluidTank setValidatorInTank(int tank, Predicate<FluidStack> validator) {
-        this.validators[tank] = validator;
+    protected ExtendedFluidTank setValidatorInTank(int tank, Predicate<FluidStack> validator) {
+        this.storages[tank].setValidator(validator);
+        if(onContentsChanged != null) onContentsChanged.run();
         return this;
     }
 
-    @SuppressWarnings("UnusedReturnValue")
-    public ExtendedFluidTank setFilter(int tank, Fluid fluid) {
-        if (tank >= 0 && tank < tanks) {
-            var inStack = getFluidInTank(tank);
-            if(inStack.isEmpty() || inStack.getFluid().isSame(fluid)) {
-                this.filters.set(tank, fluid);
-                setValidatorInTank(tank, stack -> stack.isFluidEqual(FluidStack.create(fluid, 1)));
-                onContentsChanged();
-            }
+    public ExtendedFluidTank setValidatorInTank(int tank, FluidStack stack) {
+        var tarTank = this.storages[tank];
+        if(stack == null) {
+            this.filters[tank].setFluid(FluidStack.empty());
+            return setValidatorInTank(tank, stack1 -> true);
+        } else if(!tarTank.getFluid().isEmpty()
+                && !tarTank.getFluid().isFluidEqual(stack)) {
+            this.filters[tank].rollbackFluid();
+            return this;
         }
-        return this;
-    }
-
-    @SuppressWarnings("UnusedReturnValue")
-    public ExtendedFluidTank clearFilter(int tank) {
-        if (tank >= 0 && tank < tanks) {
-            this.filters.set(tank, Fluids.EMPTY);
-            setValidatorInTank(tank, stack -> true);
-            onContentsChanged();
-        }
-        return this;
-    }
-
-    public Fluid getFilter(int tank) {
-        return this.filters.get(tank);
+        this.filters[tank].setFluid(stack);
+        return setValidatorInTank(tank, stack1 -> stack1.isFluidEqual(stack));
     }
 
     @Override
     public @NotNull FluidStack getFluidInTank(int tank) {
-        return stacks[tank];
+        return storages[tank].getFluid();
     }
 
     @Override
     public void setFluidInTank(int tank, @NotNull FluidStack fluidStack) {
-        if(fluidStack.isEmpty()) {
-            stacks[tank] = FluidStack.empty();
-        } else {
-            stacks[tank] = fluidStack.copy();
-        }
+        storages[tank].setFluid(fluidStack);
         onContentsChanged();
     }
 
@@ -137,76 +101,27 @@ public class ExtendedFluidTank implements IFluidTransfer, IManaged {
 
     @Override
     public boolean isFluidValid(int tank, @NotNull FluidStack stack) {
-        return validators[tank].test(stack);
+        return true;
     }
 
     @Override
     public long fill(int tank, FluidStack resource, boolean simulate, boolean notifyChanges) {
-        if(resource.isEmpty() || !isFluidValid(tank, resource)) {
-            return 0;
-        }
-        if(simulate) {
-            if(stacks[tank].isEmpty()) {
-                return Math.min(resource.getAmount(), capacities[tank]);
-            }
-            if(!stacks[tank].isFluidEqual(resource)) {
-                return 0;
-            }
-            return Math.min(resource.getAmount(), capacities[tank] - stacks[tank].getAmount());
-        }
-        if(stacks[tank].isEmpty()) {
-            stacks[tank] = FluidStack.create(resource, Math.min(resource.getAmount(), capacities[tank]));
-            if(notifyChanges) onContentsChanged();
-            return stacks[tank].getAmount();
-        }
-        if(!stacks[tank].isFluidEqual(resource)) {
-            return 0;
-        }
-        long filled = capacities[tank] - stacks[tank].getAmount();
-
-        if(resource.getAmount() < filled) {
-            stacks[tank].grow(resource.getAmount());
-            filled = resource.getAmount();
-        } else {
-            stacks[tank].setAmount(capacities[tank]);
-        }
-        if(filled > 0 && notifyChanges) onContentsChanged();
-        return filled;
+        return storages[tank].fill(0, resource, simulate, notifyChanges);
     }
 
     @Override
     public boolean supportsFill(int tank) {
-        return true;
+        return storages[tank].supportsFill(tank);
     }
 
     @Override
     public @NotNull FluidStack drain(int tank, FluidStack resource, boolean simulate, boolean notifyChanges) {
-        if(resource.isEmpty() || stacks[tank].isEmpty() || !isFluidValid(tank, resource)) {
-            return FluidStack.empty();
-        }
-
-        if(simulate) {
-            if(stacks[tank].isFluidEqual(resource)) {
-                return FluidStack.create(stacks[tank], Math.min(resource.getAmount(), stacks[tank].getAmount()));
-            } else {
-                return FluidStack.empty();
-            }
-        }
-        long canDrained = Math.min(resource.getAmount(), stacks[tank].getAmount());
-        var result = FluidStack.create(stacks[tank], canDrained);
-        if(canDrained > 0) {
-            stacks[tank].shrink(canDrained);
-            if(stacks[tank].isEmpty()) {
-                setFluidInTank(tank, FluidStack.empty());
-            }
-            if(notifyChanges) onContentsChanged();
-        }
-        return result;
+        return storages[tank].drain(0, resource, simulate, notifyChanges);
     }
 
     @Override
     public boolean supportsDrain(int tank) {
-        return true;
+        return storages[tank].supportsDrain(tank);
     }
 
     /***
@@ -214,83 +129,140 @@ public class ExtendedFluidTank implements IFluidTransfer, IManaged {
      */
     @Override
     public @NotNull Object createSnapshot() {
-        return deepCopy();
-    }
-
-    private @NotNull ExtendedFluidTank deepCopy() {
-        return new ExtendedFluidTank(this);
+        return new ExtendedFluidTank(storages);
     }
 
     @Override
-    public void restoreFromSnapshot(Object snapshot) {
-
-    }
+    public void restoreFromSnapshot(Object snapshot) {}
 
     @Override
     public void onContentsChanged() {
-        IFluidTransfer.super.onContentsChanged();
-        this.onContentChanged.run();
+        this.onContentsChanged.run();
     }
 
-//    @Override
-//    public CompoundTag serializeNBT() {
-//        CompoundTag tag = new CompoundTag();
-//        ListTag fluids = new ListTag();
-//        for (FluidStack stack : stacks) {
-//            fluids.add(stack.saveToTag(new CompoundTag()));
-//        }
-//        tag.put("Fluids", fluids);
-//        ListTag filters = new ListTag();
-//        for(var fluid : this.filters) {
-//            if(fluid != null) {
-//                filters.add(StringTag.valueOf(fluid.toString()));
-//            } else {
-//                filters.add(StringTag.valueOf(""));
-//            }
-//        }
-//        tag.put("Filters", filters);
-//        tag.putLongArray("capacities", capacities);
-//        return tag;
-//    }
+    @Override
+    public CompoundTag serializeNBT() {
+        var tag = new CompoundTag();
+        ListTag storagesTag = new ListTag();
+        ListTag filtersTag = new ListTag();
+        for(int i = 0; i < tanks; ++i) {
+            if(!storages[i].getFluid().isEmpty()) {
+                CompoundTag fluidTag = new CompoundTag();
+                fluidTag.putInt("s", i);
+                fluidTag.put("f", storages[i].serializeNBT());
+                storagesTag.add(fluidTag);
+            }
+            if(!filters[i].isEmpty()) {
+                CompoundTag fTag = new CompoundTag();
+                fTag.putInt("s", i);
+                fTag.put("f", filters[i].serializeNBT());
+                filtersTag.add(fTag);
+            }
+        }
+        tag.put("storages", storagesTag);
+        tag.put("filters", filtersTag);
+        return tag;
+    }
 
-//    @Override
-//    public void deserializeNBT(CompoundTag nbt) {
-//        ListTag listTag;
-//        if(nbt.contains("Fluids")) {
-//            listTag = nbt.getList("Fluids", 10);
-//            for(int i = 0; i < listTag.size(); ++i) {
-//                CompoundTag compoundTag = listTag.getCompound(i);
-//                this.stacks[i] = FluidStack.loadFromTag(compoundTag);
-//            }
-//        }
-//        if(nbt.contains("Filters")) {
-//            listTag = nbt.getList("Filters", 8);
-//            // filters.clear();
-//            for(int i = 0; i < listTag.size(); ++i) {
-//                var fluidName = ResourceLocation.tryParse(listTag.getString(i));
-//                System.out.println("fluidName: " + fluidName);
-//                if(fluidName != null) {
-//                    // filters.add(i, null);
-//                    setFilter(i, fluidName);
-//                } else {
-//                    // filters.add(i, null);
-//                    clearFilter(i);
-//                }
-//            }
-//        }
-//        if(nbt.contains("Capacities")) {
-//            long[] capacities = nbt.getLongArray("Capacities");
-//            System.arraycopy(capacities, 0, this.capacities, 0, capacities.length);
-//        }
-//    }
-//
-//    @Override
-//    public void setOnContentsChanged(Runnable onContentChanged) {
-//        this.onContentChanged = onContentChanged;
-//    }
-//
-//    @Override
-//    public Runnable getOnContentsChanged() {
-//        return onContentChanged;
-//    }
+    @Override
+    public void deserializeNBT(CompoundTag nbt) {
+        ListTag storagesTag = nbt.getList("storages", 10);
+        ListTag filtersTag = nbt.getList("filters", 10);
+        for(int i = 0; i < storagesTag.size(); ++i) {
+            var tag = storagesTag.getCompound(i);
+            this.storages[tag.getInt("s")].deserializeNBT(tag.getCompound("f"));
+        }
+
+        for(int i = 0; i < filtersTag.size(); ++i) {
+            var tag = filtersTag.getCompound(i);
+            int tank = tag.getInt("s");
+            this.filters[tank].deserializeNBT(tag.getCompound("f"));
+            setValidatorInTank(tank, filters[tank].getFluid());
+        }
+    }
+
+    private static class FilterStorage implements IFluidStorage, IContentChangeAware, ITagSerializable<CompoundTag> {
+        private final int tank;
+        @Getter @Setter
+        private Runnable onContentsChanged = () -> {};
+        @Getter @NotNull
+        private FluidStack fluid = FluidStack.empty();
+        @Getter
+        private FluidStack lastValidFluid = fluid;
+
+        public FilterStorage(int tank) {
+            this.tank = tank;
+        }
+
+        public boolean isEmpty() {
+            return fluid.isEmpty();
+        }
+
+        @Override
+        public long getCapacity() {
+            return 0;
+        }
+
+        @Override
+        public void setFluid(FluidStack fluid) {
+            this.lastValidFluid = this.fluid;
+            this.fluid = fluid;
+            onContentsChanged();
+        }
+
+        public void rollbackFluid() {
+            this.fluid = lastValidFluid;
+            onContentsChanged();
+        }
+
+        @Override
+        public boolean isFluidValid(FluidStack stack) {
+            return true;
+        }
+
+        @Override
+        public long fill(int tank, FluidStack resource, boolean simulate, boolean notifyChanges) {
+            if(!simulate)
+                setFluid(resource);
+            return resource.getAmount();
+        }
+
+        @Override
+        public boolean supportsFill(int tank) {
+            return true;
+        }
+
+        @Override
+        public @NotNull FluidStack drain(int tank, FluidStack resource, boolean simulate, boolean notifyChanges) {
+            return FluidStack.empty();
+        }
+
+        @Override
+        public boolean supportsDrain(int tank) {
+            return true;
+        }
+
+        @Override
+        public @NotNull Object createSnapshot() {
+            return fluid.copy();
+        }
+
+        @Override
+        public void restoreFromSnapshot(Object snapshot) {}
+
+        @Override
+        public void deserializeNBT(CompoundTag nbt) {
+            setFluid(FluidStack.loadFromTag(nbt));
+        }
+
+        @Override
+        public CompoundTag serializeNBT() {
+            return fluid.saveToTag(new CompoundTag());
+        }
+
+        @Override
+        public void onContentsChanged() {
+            onContentsChanged.run();
+        }
+    }
 }

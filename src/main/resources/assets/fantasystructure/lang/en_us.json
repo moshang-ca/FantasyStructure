@@ -6,5 +6,7 @@
 
   "fantasystructure.gui.structure_info.storage": "Storage condition: \n    Bytes: %d / %d \n    Types: %d / %d",
   "fantasystructure.gui.structure_info.threads_info": "Available Parallel: %s\nThreads: \n%s\n",
-  "fantasystructure.gui.structure_info.thread": "    Name: %s   Parallel: %s\n"
+  "fantasystructure.gui.structure_info.thread": "    Name: %s   Parallel: %s\n",
+
+  "fantasystructure.gui.energy_bus.storage": "Stored: %dFE / %dFE"
 }

@@ -42,10 +42,7 @@ public class FSBlocks {
             register("small_item_input_bus", () -> new BlockItemBus(3, ComponentItemCapacity.SMALL, IO.IN)),
             register("medium_item_input_bus", () -> new BlockItemBus(3, ComponentItemCapacity.MEDIUM, IO.IN)),
             register("large_item_input_bus", () -> new BlockItemBus(3, ComponentItemCapacity.LARGE, IO.IN)),
-            register("great_item_input_bus", () -> new BlockItemBus(3, ComponentItemCapacity.GREAT, IO.IN)),
-            register("giant_item_input_bus", () -> new BlockItemBus(3, ComponentItemCapacity.GIANT, IO.IN)),
-            register("colossal_item_input_bus", () -> new BlockItemBus(3, ComponentItemCapacity.COLOSSAL, IO.IN)),
-            register("titanic_item_input_bus", () -> new BlockItemBus(3, ComponentItemCapacity.TITANIC, IO.IN))
+            register("great_item_input_bus", () -> new BlockItemBus(3, ComponentItemCapacity.GREAT, IO.IN))
     ).toArray(RegistryObject[]::new);
     public static final RegistryObject<Block>[] ITEM_OUTPUT_BUSES = List.of(
             register("tiny_item_output_bus", () -> new BlockItemBus(3, ComponentItemCapacity.TINY, IO.OUT)),

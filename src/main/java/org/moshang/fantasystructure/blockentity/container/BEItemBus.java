@@ -1,5 +1,12 @@
 package org.moshang.fantasystructure.blockentity.container;
 
+import com.lowdragmc.lowdraglib.gui.modular.IUIHolder;
+import com.lowdragmc.lowdraglib.gui.modular.ModularUI;
+import com.lowdragmc.lowdraglib.gui.texture.ResourceBorderTexture;
+import com.lowdragmc.lowdraglib.gui.texture.ResourceTexture;
+import com.lowdragmc.lowdraglib.gui.widget.SlotWidget;
+import com.lowdragmc.lowdraglib.gui.widget.WidgetGroup;
+import com.lowdragmc.lowdraglib.gui.widget.custom.PlayerInventoryWidget;
 import com.lowdragmc.lowdraglib.syncdata.IManagedStorage;
 import com.lowdragmc.lowdraglib.syncdata.ISubscription;
 import com.lowdragmc.lowdraglib.syncdata.annotation.Persisted;
@@ -8,6 +15,7 @@ import com.lowdragmc.lowdraglib.syncdata.field.ManagedFieldHolder;
 import lombok.Getter;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -18,6 +26,7 @@ import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.items.IItemHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.moshang.fantasystructure.FantasyStructure;
 import org.moshang.fantasystructure.api.blockentity.IBus;
 import org.moshang.fantasystructure.api.capability.recipe.IO;
 import org.moshang.fantasystructure.api.capability.recipe.IRecipeHandler;
@@ -27,12 +36,13 @@ import org.moshang.fantasystructure.api.slot.ExtendedItemStackHandler;
 import org.moshang.fantasystructure.block.container.BlockItemBus;
 import org.moshang.fantasystructure.capability.handler.ItemSlotRecipeHandler;
 import org.moshang.fantasystructure.capability.recipe.ItemRecipeCapability;
+import org.moshang.fantasystructure.client.widget.FixedScrollableWidget;
 import org.moshang.fantasystructure.registry.FSBlockEntities;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class BEItemBus extends BlockEntity implements IBus {
+public class BEItemBus extends BlockEntity implements IBus, IUIHolder.BlockEntityUI {
     protected static final ManagedFieldHolder MANAGED_FIELD_HOLDER = new ManagedFieldHolder(BEItemBus.class);
     private final FieldManagedStorage syncStorage = new FieldManagedStorage(this);
 
@@ -94,6 +104,32 @@ public class BEItemBus extends BlockEntity implements IBus {
                 setChanged();
             }
         };
+    }
+
+    protected WidgetGroup createUI() {
+        WidgetGroup root = new WidgetGroup();
+        root.setSize(176, 222);
+        root.setBackground(ResourceBorderTexture.BORDERED_BACKGROUND);
+        var playerInv = new PlayerInventoryWidget();
+        playerInv.setSelfPosition(2, 124);
+        var containerWidget = new FixedScrollableWidget(6, 5, 162, 108)
+                .setYBarHeight(17)
+                .setYBarStyle(ResourceBorderTexture.BORDERED_BACKGROUND_INVERSE,
+                        new ResourceTexture(FantasyStructure.id("textures/gui/scroll_bar.png"), 0, 0, .5f, 1.f))
+                .setYScrollBarWidth(14)
+                .setUseScissor(true);
+        containerWidget.setScrollXOffset(6);
+        for(int i = 0; i < itemHandler.getSlots(); i++) {
+            containerWidget.addWidget(new SlotWidget(itemHandler.toIItemTransfer(), i, 8 + (i % 8) * 18, 8 + (i / 8) * 18));
+        }
+
+        root.addWidgets(playerInv, containerWidget);
+        return root;
+    }
+
+    @Override
+    public final ModularUI createUI(Player entityPlayer) {
+        return new ModularUI(createUI(), this, entityPlayer);
     }
 
     @Override

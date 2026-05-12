@@ -231,7 +231,7 @@ public abstract class BlockEntityAbstractController extends BlockEntity
         upgradeMenu.addWidget(upgradeButton);
         var menuOpenButton = new ButtonWidget(
                 5, 150 - 20, 20, 20,
-                new GuiTextureGroup(ResourceBorderTexture.BUTTON_COMMON, Icons.LEFT.setImageWidthHeight(20, 20)),
+                new GuiTextureGroup(ResourceBorderTexture.BUTTON_COMMON, Icons.LEFT.setImageWidthHeight(.9f, .9f)),
                 clickData -> upgradeMenu.setVisible(!upgradeMenu.isVisible())
         ).setId("menu_open_button");
 

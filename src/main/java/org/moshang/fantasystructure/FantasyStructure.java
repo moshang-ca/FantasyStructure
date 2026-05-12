@@ -22,7 +22,6 @@ import org.moshang.fantasystructure.helper.blueprint.BlueprintEditor;
 import org.moshang.fantasystructure.helper.blueprint.BlueprintManager;
 import org.moshang.fantasystructure.helper.builder.StructureBuilderManager;
 import org.moshang.fantasystructure.integration.ae2.storage.StorageDataManager;
-import org.moshang.fantasystructure.network.FSMessages;
 import org.moshang.fantasystructure.registry.*;
 import org.moshang.fantasystructure.registry.recipe.FSRecipes;
 import org.slf4j.Logger;
@@ -55,20 +54,17 @@ public class FantasyStructure {
 
     private void commonSetup(final FMLCommonSetupEvent event) {
         event.enqueueWork(() -> {
-            FSMessages.register();
             BlueprintManager.init(FMLPaths.CONFIGDIR.get());
             BlueprintEditor.init();
         });
     }
 
     private void init(IEventBus modEventBus) {
-        FSMenuType.MENU_TYPES.register(modEventBus);
         FSBlocks.BLOCKS.register(modEventBus);
         FSBlockEntities.BLOCK_ENTITIES.register(modEventBus);
         FSItems.ITEMS.register(modEventBus);
         FSCreativeModeTabs.TABS.register(modEventBus);
 
-        FSMenuType.registerMenuFactories();
         FSRecipes.initRecipeCapabilities();
         FSRecipes.initRecipeTypes();
         FSStructureDefinitions.init();

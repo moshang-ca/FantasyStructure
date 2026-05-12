@@ -1,28 +1,26 @@
 package org.moshang.fantasystructure.blockentity.container;
 
-import com.lowdragmc.lowdraglib.side.fluid.FluidStack;
-import com.lowdragmc.lowdraglib.side.fluid.forge.FluidHelperImpl;
+import com.lowdragmc.lowdraglib.gui.modular.IUIHolder;
+import com.lowdragmc.lowdraglib.gui.modular.ModularUI;
+import com.lowdragmc.lowdraglib.gui.texture.ProgressTexture;
+import com.lowdragmc.lowdraglib.gui.texture.ResourceBorderTexture;
+import com.lowdragmc.lowdraglib.gui.widget.PhantomTankWidget;
+import com.lowdragmc.lowdraglib.gui.widget.WidgetGroup;
+import com.lowdragmc.lowdraglib.gui.widget.custom.PlayerInventoryWidget;
 import com.lowdragmc.lowdraglib.side.fluid.forge.FluidTransferHelperImpl;
 import com.lowdragmc.lowdraglib.syncdata.IManagedStorage;
 import com.lowdragmc.lowdraglib.syncdata.ISubscription;
 import com.lowdragmc.lowdraglib.syncdata.annotation.DescSynced;
 import com.lowdragmc.lowdraglib.syncdata.annotation.Persisted;
-import com.lowdragmc.lowdraglib.syncdata.blockentity.IRPCBlockEntity;
 import com.lowdragmc.lowdraglib.syncdata.field.FieldManagedStorage;
 import com.lowdragmc.lowdraglib.syncdata.field.ManagedFieldHolder;
 import lombok.Getter;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.sounds.SoundEvent;
-import net.minecraft.sounds.SoundSource;
-import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.material.Fluid;
-import net.minecraft.world.level.material.Fluids;
-import net.minecraftforge.common.SoundActions;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
@@ -38,13 +36,13 @@ import org.moshang.fantasystructure.api.slot.ExtendedFluidTank;
 import org.moshang.fantasystructure.block.container.BlockFluidBus;
 import org.moshang.fantasystructure.capability.handler.FluidRecipeHandler;
 import org.moshang.fantasystructure.capability.recipe.FluidRecipeCapability;
+import org.moshang.fantasystructure.client.widget.FilterableTankWidget;
 import org.moshang.fantasystructure.registry.FSBlockEntities;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Predicate;
 
-public class BEFluidBus extends BlockEntity implements IBus, IRPCBlockEntity {
+public class BEFluidBus extends BlockEntity implements IBus, IUIHolder.BlockEntityUI {
     public static final ManagedFieldHolder MANAGED_FIELD_HOLDER = new ManagedFieldHolder(BEFluidBus.class);
     private final FieldManagedStorage syncStorage = new FieldManagedStorage(this);
 
@@ -101,71 +99,27 @@ public class BEFluidBus extends BlockEntity implements IBus, IRPCBlockEntity {
         return ExtendedFluidTank.create(tanks, capacity, this::setChanged);
     }
 
-    public void fillTank(ServerPlayer player, int tank, ItemStack heldItem) {
-        if(level != null && !level.isClientSide) {
-            heldItem.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).ifPresent(itemHandler -> {
-                FluidStack available = FluidHelperImpl.toFluidStack(itemHandler.drain(Integer.MAX_VALUE, IFluidHandler.FluidAction.SIMULATE));
-                if (available.isEmpty()) return;
-
-                if (fluidTank.isFluidValid(tank, available)) {
-                    long canFill = fluidTank.fill(tank, available, true, false);
-                    if (canFill > 0) {
-                        var drained = FluidHelperImpl.toFluidStack(itemHandler.drain((int) canFill, IFluidHandler.FluidAction.EXECUTE));
-                        if (!drained.isEmpty()) {
-                            fluidTank.fill(tank, drained, false, true);
-                            level.playSound(null, player.getX(), player.getY() + .5f, player.getZ(), getSound(drained.getFluid(), false), SoundSource.BLOCKS, 1.F, 1.F);
-                            var updatedStack = itemHandler.getContainer();
-                            player.containerMenu.setCarried(updatedStack);
-                        }
-                    }
-                }
-            });
+    private WidgetGroup createUI() {
+        WidgetGroup root = new WidgetGroup();
+        root.setBackground(ResourceBorderTexture.BORDERED_BACKGROUND);
+        root.setSize(176, 202);
+        var playerInv = new PlayerInventoryWidget();
+        playerInv.setSelfPosition(2, 110);
+        for(int i = 0; i < fluidTank.getTanks(); ++i) {
+            var filter = new PhantomTankWidget(fluidTank.getFilters()[i], 0, 0);
+            var filterWidget = new FilterableTankWidget(fluidTank, i, 13 + i * 22, 43, true, true, filter);
+            filterWidget.setSize(18, 61);
+            filterWidget.setFillDirection(ProgressTexture.FillDirection.DOWN_TO_UP);
+            root.addWidgets(filterWidget, filter);
         }
+
+        root.addWidgets(playerInv);
+        return root;
     }
 
-    public void drainTank(ServerPlayer player, int tank, ItemStack heldItem) {
-        if(level != null && !level.isClientSide) {
-            FluidStack tankStack = fluidTank.getFluidInTank(tank);
-            if (tankStack.isEmpty()) return;
-
-            heldItem.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).ifPresent(itemHandler -> {
-                FluidStack toFill = tankStack.copy();
-                toFill.setAmount((int) Math.min(tankStack.getAmount(), 1000));
-
-                int filled = itemHandler.fill(FluidHelperImpl.toFluidStack(toFill), IFluidHandler.FluidAction.SIMULATE);
-                if (filled <= 0) return;
-
-                FluidStack drained = fluidTank.drain(tank, FluidStack.create(toFill.getFluid(), filled), false, true);
-                if (!drained.isEmpty()) {
-                    itemHandler.fill(FluidHelperImpl.toFluidStack(drained), IFluidHandler.FluidAction.EXECUTE);
-                    level.playSound(null, player.getX(), player.getY() + .5f, player.getZ(), getSound(drained.getFluid(), true), SoundSource.BLOCKS, 1.F, 1.F);
-                    // Maybe this is not a good implementation, but it does work in vanilla.
-                    var updatedStack = itemHandler.getContainer();
-                    player.containerMenu.setCarried(updatedStack);
-                }
-            });
-        }
-    }
-
-    // This is for wildcard or tag filter, but may need to change the design to use this.
-    public void setValidatorInTank(int tank, Predicate<FluidStack> validator) {
-        fluidTank.setValidatorInTank(tank, validator);
-    }
-
-    public void setValidatorInTank(int tank, Fluid fluid) {
-        if (fluid != Fluids.EMPTY) {
-            fluidTank.setFilter(tank, fluid);
-        } else {
-            fluidTank.clearFilter(tank);
-        }
-    }
-
-    public void setValidatorInTank(int tank, FluidStack fluid) {
-        setValidatorInTank(tank, fluid.getFluid());
-    }
-
-    private SoundEvent getSound(Fluid fluid, boolean isFill) {
-        return fluid.getFluidType().getSound(isFill ? SoundActions.BUCKET_FILL : SoundActions.BUCKET_EMPTY);
+    @Override
+    public final ModularUI createUI(Player entityPlayer) {
+        return new ModularUI(createUI(), this, entityPlayer);
     }
 
     @Override

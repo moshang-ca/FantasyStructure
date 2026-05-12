@@ -1,8 +1,14 @@
 package org.moshang.fantasystructure.api.block;
 
+import com.lowdragmc.lowdraglib.gui.factory.BlockEntityUIFactory;
+import com.lowdragmc.lowdraglib.gui.modular.IUIHolder;
 import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
@@ -14,6 +20,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.level.material.PushReaction;
+import net.minecraft.world.phys.BlockHitResult;
 import org.jetbrains.annotations.Nullable;
 import org.moshang.fantasystructure.api.blockentity.IBus;
 import org.moshang.fantasystructure.api.capability.recipe.IO;
@@ -68,6 +75,19 @@ public abstract class BlockAbstractBus<T extends BlockEntity & IBus> extends Hor
         super.onRemove(pState, pLevel, pPos, pNewState, pMovedByPiston);
     }
 
+    @Override
+    @SuppressWarnings("deprecation")
+    public InteractionResult use(BlockState pState, Level pLevel, BlockPos pPos, Player pPlayer, InteractionHand pHand, BlockHitResult pHit) {
+        if(!pLevel.isClientSide && pPlayer instanceof ServerPlayer serverPlayer) {
+            BlockEntity be = pLevel.getBlockEntity(pPos);
+            if(be instanceof IUIHolder) {
+                BlockEntityUIFactory.INSTANCE.openUI(be, serverPlayer);
+                return InteractionResult.SUCCESS;
+            }
+        }
+        return InteractionResult.sidedSuccess(pLevel.isClientSide);
+    }
+
     protected abstract T createBlockEntity(BlockPos pPos, BlockState pState);
-    protected  void dropContainerItems(Level level, BlockPos pos) {}
+    protected void dropContainerItems(Level level, BlockPos pos) {}
 }
