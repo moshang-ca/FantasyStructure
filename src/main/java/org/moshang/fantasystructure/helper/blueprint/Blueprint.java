@@ -7,6 +7,7 @@ import lombok.Getter;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
@@ -19,6 +20,8 @@ import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
@@ -55,9 +58,9 @@ public class Blueprint {
         this.materialMap = materialMap;
     }
 
-    public static Blueprint fromJson(Path file) throws BlueprintLoadException {
+    private static Blueprint fromJsonInternal(ResourceLocation bpId, InputStream is) throws BlueprintLoadException {
         try {
-            String jsonContent = Files.readString(file);
+            String jsonContent = new String(is.readAllBytes(), StandardCharsets.UTF_8);
             JsonObject root = GSON.fromJson(jsonContent, JsonObject.class);
 
             String registryName = root.get("registry_name").getAsString();
@@ -117,7 +120,23 @@ public class Blueprint {
             LOGGER.info("Loaded blueprint {} with {} blocks", id, pattern.size());
             return new Blueprint(id, localizedName, sizeX, sizeY, sizeZ, controllerOffset, dir, pattern, materialMap);
         } catch (IOException | JsonParseException e) {
+            throw new BlueprintLoadException("Failed to load blueprint " + bpId, e);
+        }
+    }
+
+    public static Blueprint fromJson(ResourceLocation bpId, Path file) throws BlueprintLoadException {
+        try(InputStream is = Files.newInputStream(file)) {
+            return fromJsonInternal(bpId, is);
+        } catch (IOException e) {
             throw new BlueprintLoadException("Failed to load blueprint " + file.getFileName(), e);
+        }
+    }
+
+    public static Blueprint fromJson(ResourceLocation bpId, Resource resource) throws BlueprintLoadException {
+        try(InputStream is = resource.open()) {
+            return fromJsonInternal(bpId, is);
+        } catch (IOException e) {
+            throw new BlueprintLoadException("Failed to load blueprint " + bpId, e);
         }
     }
 

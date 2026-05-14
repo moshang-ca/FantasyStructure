@@ -2,8 +2,10 @@ package org.moshang.fantasystructure.helper.blueprint;
 
 import com.mojang.logging.LogUtils;
 import lombok.Getter;
+import net.minecraft.client.Minecraft;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.world.item.Item;
 import org.moshang.fantasystructure.Config;
 import org.moshang.fantasystructure.FantasyStructure;
@@ -18,7 +20,7 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.BiConsumer;
 
-@SuppressWarnings({"removal", "CallToPrintStackTrace"})
+@SuppressWarnings({"CallToPrintStackTrace", "unused"})
 public class BlueprintManager {
     private static final Map<ResourceLocation, Blueprint> REGISTRY = new ConcurrentHashMap<>();
 
@@ -77,19 +79,34 @@ public class BlueprintManager {
         int newSkipped = 0;
         int newTotal = 0;
 
-        Path blueprintDir = configDir.resolve("fantasystructure/blueprints");
         try {
-            Files.createDirectories(blueprintDir);
+            Map<ResourceLocation, Object> files = new HashMap<>();
 
-            List<Path> files = new ArrayList<>();
+            var resourceManager = Minecraft.getInstance().getResourceManager();
+            var blueprintResources = resourceManager.listResources("blueprints",
+                    location -> location.getPath().endsWith(".json"));
+            for(var entry : blueprintResources.entrySet()) {
+                ResourceLocation location = entry.getKey();
+                if(location.getNamespace().equals(FantasyStructure.MODID)) {
+                    String path = location.getPath();
+                    String name = path.substring(path.lastIndexOf('/') + 1, path.lastIndexOf('.'));
+                    files.put(FantasyStructure.id(name), entry.getValue());
+                }
+            }
+
+            Path blueprintDir = configDir.resolve("fantasystructure/blueprints");
+            Files.createDirectories(blueprintDir);
             try(DirectoryStream<Path> stream = Files.newDirectoryStream(blueprintDir, "*.json")) {
-                stream.forEach(files::add);
+                for(Path file : stream) {
+                    String name = file.getFileName().toString().replace(".json", "");
+                    files.put(FantasyStructure.id(name), file);
+                }
             }
             newTotal = files.size();
 
             ExecutorCompletionService<LoadResult> completionService = new ExecutorCompletionService<>(LOADING_THREAD_POOL);
-            for(Path file : files) {
-                completionService.submit(() -> loadBlueprintInternal(file));
+            for(var file : files.entrySet()) {
+                completionService.submit(() -> loadBlueprintInternal(file.getKey(), file.getValue()));
             }
 
             for(int i = 0; i < newTotal; ++i) {
@@ -113,13 +130,17 @@ public class BlueprintManager {
     }
 
 
-    private static LoadResult loadBlueprintInternal(Path file) {
+    private static LoadResult loadBlueprintInternal(ResourceLocation bpId, Object rawResource) {
         try {
-            String name = file.getFileName().toString().replace(".json", "");
-            ResourceLocation id = new ResourceLocation(FantasyStructure.MODID, name);
-
-            Blueprint blueprint = Blueprint.fromJson(file);
-            return new LoadResult(id, blueprint, null);
+            if(rawResource instanceof Path file){
+                Blueprint blueprint = Blueprint.fromJson(bpId, file);
+                return new LoadResult(bpId, blueprint, null);
+            } else if(rawResource instanceof Resource resource) {
+                Blueprint blueprint = Blueprint.fromJson(bpId, resource);
+                return new LoadResult(bpId, blueprint, null);
+            } else {
+                return LoadResult.FAILURE;
+            }
         } catch (Blueprint.BlueprintLoadException e) {
             e.printStackTrace();
             return new LoadResult(null, null, e.getMessage());
@@ -153,6 +174,8 @@ public class BlueprintManager {
     }
 
     private static class LoadResult {
+        static final LoadResult FAILURE = new LoadResult(null, null, null);
+
         final ResourceLocation id;
         final Blueprint blueprint;
         final String error;
