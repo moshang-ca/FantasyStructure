@@ -11,6 +11,5 @@ public class FSLDLibPlugin implements ILDLibPlugin {
     @Override
     public void onLoad() {
         TypedPayloadRegistries.register(FriendlyBufPayload.class, FriendlyBufPayload::new, Accessor.STRUCTURE_DEFINITION, 1000);
-        TypedPayloadRegistries.register(FriendlyBufPayload.class, FriendlyBufPayload::new, Accessor.STORAGE_DATA, 1000);
     }
 }

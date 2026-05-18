@@ -1,6 +1,5 @@
 package org.moshang.fantasystructure.api.slot;
 
-import com.lowdragmc.lowdraglib.misc.FluidStorage;
 import com.lowdragmc.lowdraglib.side.fluid.FluidStack;
 import com.lowdragmc.lowdraglib.side.fluid.IFluidStorage;
 import com.lowdragmc.lowdraglib.side.fluid.IFluidTransfer;
@@ -9,7 +8,6 @@ import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
-import net.minecraft.world.level.material.Fluid;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.function.Predicate;
@@ -178,6 +176,25 @@ public class ExtendedFluidTank implements IFluidTransfer, IContentChangeAware, I
             int tank = tag.getInt("s");
             this.filters[tank].deserializeNBT(tag.getCompound("f"));
             setValidatorInTank(tank, filters[tank].getFluid());
+        }
+    }
+
+    public static class FluidStorage extends com.lowdragmc.lowdraglib.misc.FluidStorage {
+        public FluidStorage(long capacity, Predicate<FluidStack> validator) {
+            super(capacity, validator);
+        }
+
+        public FluidStorage(FluidStack fluid, long capacity) {
+            super(capacity);
+            if(fluid.getAmount() > capacity) {
+                throw new IllegalArgumentException("Fluid amount exceeds capacity");
+            }
+            this.fluid = fluid;
+        }
+
+        @Override
+        public @NotNull Object createSnapshot() {
+            return new FluidStorage(fluid.copy(), capacity);
         }
     }
 

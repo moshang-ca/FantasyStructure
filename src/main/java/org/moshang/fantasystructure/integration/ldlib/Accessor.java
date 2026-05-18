@@ -7,7 +7,6 @@ import com.lowdragmc.lowdraglib.syncdata.payload.FriendlyBufPayload;
 import com.lowdragmc.lowdraglib.syncdata.payload.ITypedPayload;
 import io.netty.buffer.Unpooled;
 import net.minecraft.network.FriendlyByteBuf;
-import org.moshang.fantasystructure.integration.ae2.storage.StorageData;
 import org.moshang.fantasystructure.registry.FSStructureDefinitions;
 
 import java.util.function.BiConsumer;
@@ -17,9 +16,6 @@ public abstract class Accessor<T> extends CustomObjectAccessor<T> {
     public Accessor(Class<T> type, boolean includesChildren) {
         super(type, includesChildren);
     }
-
-    public static final CustomObjectAccessor<StorageData> STORAGE_DATA =
-            create(StorageData.class, StorageData::toNetwork, StorageData::fromNetwork);
 
     public static final CustomObjectAccessor<FSStructureDefinitions.StructureDefinition> STRUCTURE_DEFINITION =
             create(FSStructureDefinitions.StructureDefinition.class,

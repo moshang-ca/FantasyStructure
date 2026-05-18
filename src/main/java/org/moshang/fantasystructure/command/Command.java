@@ -14,6 +14,7 @@ import org.moshang.fantasystructure.api.blockentity.BlockEntityAbstractControlle
 import org.moshang.fantasystructure.data.save.StructureWorldSavedData;
 import org.moshang.fantasystructure.helper.blueprint.BlueprintEditor;
 import org.moshang.fantasystructure.helper.blueprint.BlueprintManager;
+import org.moshang.fantasystructure.registry.recipe.FSRecipes;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -31,6 +32,17 @@ public class Command {
         dispatcher.register(Commands.literal("fantasystructure")
                 .then(Commands.literal("reload")
                         .executes(Command::executeReload)));
+
+        // Just for debug
+        dispatcher.register(Commands.literal("fantasystructure")
+                .then(Commands.literal("getRecipeType")
+                        .executes(ctx -> {
+                            var source = ctx.getSource();
+                            for(var entry : FSRecipes.RECIPE_TYPES.entrySet()) {
+                                source.sendSuccess(() -> Component.literal("recipe type: " + entry.getValue().toString()), false);
+                            }
+                            return 1;
+                        })));
     }
 
     private static int executeExport(CommandContext<CommandSourceStack> ctx, String registryName)

@@ -1,6 +1,5 @@
 package org.moshang.fantasystructure.registry;
 
-import com.lowdragmc.lowdraglib.Platform;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
@@ -12,12 +11,10 @@ import org.moshang.fantasystructure.api.capacity.ComponentEnergyCapacity;
 import org.moshang.fantasystructure.api.capacity.ComponentFluidCapacity;
 import org.moshang.fantasystructure.api.capacity.ComponentItemCapacity;
 import org.moshang.fantasystructure.api.capability.recipe.IO;
-import org.moshang.fantasystructure.block.BlockAEConnector;
 import org.moshang.fantasystructure.block.BlockStarCore;
 import org.moshang.fantasystructure.block.container.BlockEnergyBus;
 import org.moshang.fantasystructure.block.container.BlockFluidBus;
 import org.moshang.fantasystructure.block.container.BlockItemBus;
-import org.moshang.fantasystructure.block.controller.BlockAEStorageController;
 import org.moshang.fantasystructure.block.controller.BlockTestController;
 import org.moshang.fantasystructure.block.creative.BlockCreativeEnergySource;
 
@@ -35,7 +32,6 @@ public class FSBlocks {
     );
 
     public static final RegistryObject<Block> TEST_CONTROLLER = register("test_controller", () -> new BlockTestController(3));
-    public static final RegistryObject<Block> AE_STORAGE_CONTROLLER;
 
     public static final RegistryObject<Block>[] ITEM_INPUT_BUSES = List.of(
             register("tiny_item_input_bus", () -> new BlockItemBus(3, ComponentItemCapacity.TINY, IO.IN)),
@@ -70,21 +66,10 @@ public class FSBlocks {
             register("tiny_fluid_output_bus", () -> new BlockFluidBus(3, ComponentFluidCapacity.TINY, IO.OUT))
     ).toArray(RegistryObject[]::new);
 
-    public static final RegistryObject<Block> AE_CONNECTOR;
 
     public static final RegistryObject<Block> CREATIVE_ENERGY_SOURCE = register("creative_energy_source", () -> new BlockCreativeEnergySource(3));
 
     public static final RegistryObject<Block> STAR_CORE = register("star_core", BlockStarCore::new);
-
-    static {
-        if(Platform.isModLoaded("ae2")) {
-            AE_STORAGE_CONTROLLER = register("ae_storage_controller", () -> new BlockAEStorageController(3));
-            AE_CONNECTOR = register("ae_connector", () -> new BlockAEConnector(3));
-        } else {
-            AE_STORAGE_CONTROLLER = null;
-            AE_CONNECTOR = null;
-        }
-    }
 
     private FSBlocks() {}
 

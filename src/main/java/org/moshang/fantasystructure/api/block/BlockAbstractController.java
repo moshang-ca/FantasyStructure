@@ -117,5 +117,4 @@ public abstract class BlockAbstractController<T extends BlockEntityAbstractContr
         }
         return InteractionResult.sidedSuccess(level.isClientSide);
     }
-
 }

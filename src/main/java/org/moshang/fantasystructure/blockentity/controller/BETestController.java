@@ -7,7 +7,6 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import org.moshang.fantasystructure.FantasyStructure;
 import org.moshang.fantasystructure.api.blockentity.BlockEntityAbstractRecipeController;
-import org.moshang.fantasystructure.api.recipe.FSRecipeType;
 import org.moshang.fantasystructure.block.controller.BlockTestController;
 import org.moshang.fantasystructure.registry.FSBlockEntities;
 import org.moshang.fantasystructure.registry.FSBlocks;
@@ -27,11 +26,6 @@ public class BETestController extends BlockEntityAbstractRecipeController {
     public BETestController(BlockEntityType<?> entityType, BlockPos pos,
                             BlockState state, ResourceLocation controllerId) {
         super(entityType, pos, state, controllerId, 8, -1, 1);
-    }
-
-    @Override
-    public FSRecipeType getRecipeType() {
-        return getDefinition().recipeType();
     }
 
     private Vec3i getRenderCenter() {

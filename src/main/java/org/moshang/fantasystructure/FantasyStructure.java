@@ -1,14 +1,10 @@
 package org.moshang.fantasystructure;
 
-import com.lowdragmc.lowdraglib.Platform;
 import com.mojang.logging.LogUtils;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.crafting.CraftingHelper;
 import net.minecraftforge.event.RegisterCommandsEvent;
-import net.minecraftforge.event.server.ServerStartingEvent;
-import net.minecraftforge.event.server.ServerStoppingEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
@@ -16,12 +12,14 @@ import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.fml.loading.FMLPaths;
+import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraftforge.registries.RegisterEvent;
+import org.moshang.fantasystructure.api.recipe.FSRecipeSerializer;
 import org.moshang.fantasystructure.api.recipe.ingredient.SizedIngredient;
 import org.moshang.fantasystructure.command.Command;
 import org.moshang.fantasystructure.helper.blueprint.BlueprintEditor;
 import org.moshang.fantasystructure.helper.blueprint.BlueprintManager;
 import org.moshang.fantasystructure.helper.builder.StructureBuilderManager;
-import org.moshang.fantasystructure.integration.ae2.storage.StorageDataManager;
 import org.moshang.fantasystructure.registry.*;
 import org.moshang.fantasystructure.registry.recipe.FSRecipes;
 import org.slf4j.Logger;
@@ -38,25 +36,36 @@ public class FantasyStructure {
     public FantasyStructure() {
         IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
         modEventBus.addListener(this::commonSetup);
+        modEventBus.addListener(this::registerRecipeTypes);
 
         init(modEventBus);
 
         MinecraftForge.EVENT_BUS.register(this);
         MinecraftForge.EVENT_BUS.register(StructureBuilderManager.class);
         MinecraftForge.EVENT_BUS.addListener(this::commandRegister);
-        if(Platform.isModLoaded("ae2")) {
-            MinecraftForge.EVENT_BUS.addListener(this::onServerStarting);
-            MinecraftForge.EVENT_BUS.addListener(this::onServerStopping);
-        }
         ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, Config.SPEC);
         CraftingHelper.register(SizedIngredient.TYPE, SizedIngredient.SERIALIZER);
     }
 
-    private void commonSetup(final FMLCommonSetupEvent event) {
+    private void registerRecipeTypes(RegisterEvent event) {
+        if(event.getRegistryKey().equals(ForgeRegistries.Keys.RECIPE_TYPES)) {
+            FSRecipes.RECIPE_TYPES.forEach(recipeType ->
+                    ForgeRegistries.RECIPE_TYPES.register(recipeType.getRegistryName(), recipeType));
+        } else if(event.getRegistryKey().equals(ForgeRegistries.Keys.RECIPE_SERIALIZERS)) {
+            FSRecipes.RECIPE_TYPES.forEach(recipeType ->
+                    ForgeRegistries.RECIPE_SERIALIZERS.register(recipeType.getRegistryName(), new FSRecipeSerializer()));
+        }
+    }
+
+    private void commonSetup(FMLCommonSetupEvent event) {
         event.enqueueWork(() -> {
             BlueprintManager.init(FMLPaths.CONFIGDIR.get());
             BlueprintEditor.init();
         });
+
+        FSRecipes.RECIPE_TYPES.freeze();
+        FSRecipes.RECIPE_CAPABILITIES.freeze();
+        FSStructureDefinitions.DEFINITIONS.freeze();
     }
 
     private void init(IEventBus modEventBus) {
@@ -64,24 +73,9 @@ public class FantasyStructure {
         FSBlockEntities.BLOCK_ENTITIES.register(modEventBus);
         FSItems.ITEMS.register(modEventBus);
         FSCreativeModeTabs.TABS.register(modEventBus);
-
-        FSRecipes.initRecipeCapabilities();
-        FSRecipes.initRecipeTypes();
-        FSStructureDefinitions.init();
     }
 
-    private void onServerStarting(ServerStartingEvent event) {
-        ServerLevel level = event.getServer().getLevel(ServerLevel.OVERWORLD);
-        if (level != null) {
-            StorageDataManager.init(level);
-        }
-    }
-
-    private void onServerStopping(ServerStoppingEvent event) {
-        StorageDataManager.clear();
-    }
-
-    public void commandRegister(RegisterCommandsEvent event) {
+    private void commandRegister(RegisterCommandsEvent event) {
         Command.register(event.getDispatcher());
     }
 

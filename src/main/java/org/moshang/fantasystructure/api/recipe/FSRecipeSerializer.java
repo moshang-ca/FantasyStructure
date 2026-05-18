@@ -87,6 +87,10 @@ public class FSRecipeSerializer implements RecipeSerializer<FSRecipe> {
         return obj;
     }
 
+    public JsonObject toJson(FSRecipe recipe) {
+        return toJson(new JsonObject(), recipe);
+    }
+
     public static Tuple<RecipeCapability<?>, List<Content>> entryReader(FriendlyByteBuf buf) {
         RecipeCapability<?> capability = FSRecipes.RECIPE_CAPABILITIES.get(buf.readUtf());
         List<Content> contents = buf.readList(capability.getSerializer()::fromNetworkContent);

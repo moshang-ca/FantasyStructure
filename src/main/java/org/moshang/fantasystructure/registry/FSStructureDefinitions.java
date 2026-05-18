@@ -1,6 +1,7 @@
 package org.moshang.fantasystructure.registry;
 
 import lombok.Getter;
+import lombok.Setter;
 import lombok.experimental.Accessors;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
@@ -17,15 +18,38 @@ import java.util.List;
 public class FSStructureDefinitions {
     public static final FSRecipeRegistry.RL<StructureDefinition> DEFINITIONS = new FSRecipeRegistry.RL<>(FantasyStructure.id("structure_definitions"));
 
-    public static void init() {
+    static {
         DEFINITIONS.unfreeze();
         register("test_controller", "test_structure", "stellar_simulacrum");
-        register("ae_storage_controller", "ae_storage_structure", null);
-        DEFINITIONS.freeze();
     }
 
-    private static void register(String controllerId, String patternId, String recipeTypeId) {
+    public static void register(String controllerId, String patternId, String recipeTypeId) {
         DEFINITIONS.register(FantasyStructure.id(controllerId), new StructureDefinition(FantasyStructure.id(patternId), FSRecipes.RECIPE_TYPES.get(recipeTypeId)));
+    }
+
+    public static void register(ResourceLocation controllerId, StructureDefinition definition) {
+        DEFINITIONS.register(controllerId, definition);
+    }
+
+    @Getter @Setter
+    @Accessors(chain = true)
+    public static class DefinitionBuilder {
+        @Nullable private ResourceLocation recipeTypeId;
+        private final ResourceLocation controllerId;
+        private ResourceLocation patternId;
+
+        public DefinitionBuilder(ResourceLocation controllerId, ResourceLocation patternId, @Nullable ResourceLocation recipeTypeId) {
+            this.controllerId = controllerId;
+            this.patternId = patternId;
+            this.recipeTypeId = recipeTypeId;
+        }
+
+        public void build() {
+            if(patternId == null) {
+                throw new IllegalArgumentException("You are trying to register a structure without any pattern");
+            }
+            register(controllerId, new StructureDefinition(patternId, FSRecipes.RECIPE_TYPES.get(recipeTypeId)));
+        }
     }
 
     @Getter

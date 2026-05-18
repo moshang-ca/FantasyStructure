@@ -64,6 +64,10 @@ public class FSRecipeType implements RecipeType<FSRecipe> {
         }
     }
 
+    public void onRecipeManagerLoadedKjs(Map<ResourceLocation, Recipe<?>> recipesByName) {
+        recipesByName.putAll(builtInRecipes);
+    }
+
     public static FSRecipeType createDefault() {
         return new FSRecipeType(FantasyStructure.id("recipe_type"));
     }

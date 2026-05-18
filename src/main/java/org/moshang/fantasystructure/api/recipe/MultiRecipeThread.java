@@ -60,6 +60,7 @@ public class MultiRecipeThread implements IEnhancedManaged {
         this.machine = machine;
         this.freeParallels = machine.getMaxParallel();
         this.maxThreads = maxThreads;
+        this.availableThread = maxThreads;
         threads = new RecipeLogic[maxThreads];
         for(int i = 0; i < maxThreads; ++i) {
             threads[i] = new RecipeLogic(machine, this, "thread_%s".formatted(i));

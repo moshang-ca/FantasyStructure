@@ -25,6 +25,7 @@ import org.moshang.fantasystructure.FantasyStructure;
 import org.moshang.fantasystructure.api.capability.recipe.IO;
 import org.moshang.fantasystructure.api.capability.recipe.IRecipeHandler;
 import org.moshang.fantasystructure.api.capability.recipe.RecipeCapability;
+import org.moshang.fantasystructure.api.recipe.FSRecipeType;
 import org.moshang.fantasystructure.api.recipe.MultiRecipeThread;
 
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -110,7 +111,6 @@ public abstract class BlockEntityAbstractRecipeController extends BlockEntityAbs
 //        setChanged();
 //    }
 
-
     @Override
     public void onUpgrade() {
         super.onUpgrade();
@@ -148,6 +148,12 @@ public abstract class BlockEntityAbstractRecipeController extends BlockEntityAbs
     @Override
     public BlockEntity getHolder() {
         return this;
+    }
+
+    @Override
+    public FSRecipeType getRecipeType() {
+        assert getDefinition().recipeType() != null;
+        return getDefinition().recipeType();
     }
 
     @Override
