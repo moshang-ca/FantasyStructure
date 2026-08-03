@@ -67,12 +67,10 @@ public abstract class BlockEntityAbstractRecipeController extends BlockEntityAbs
     private int maxParallel;
     private final int parallelLimit;
 
-    @SuppressWarnings({"UnstableApiUsage"})
-    public BlockEntityAbstractRecipeController(BlockEntityType<?> entityType,
-                                               BlockPos pos, BlockState state,
-                                               ResourceLocation controllerId,
+    @SuppressWarnings("UnstableApiUsage")
+    public BlockEntityAbstractRecipeController(BlockEntityType<?> type, BlockPos pos, BlockState state,
                                                int baseParallel, int parallelLimit, int maxThreads) {
-        super(entityType, pos, state, controllerId);
+        super(type, pos, state);
         this.recipeCapabilityProxies = Tables.newCustomTable(new EnumMap<>(IO.class), HashMap::new);
         this.baseParallel = baseParallel;
         this.maxParallel = baseParallel;
@@ -82,10 +80,17 @@ public abstract class BlockEntityAbstractRecipeController extends BlockEntityAbs
 
     public BlockEntityAbstractRecipeController(BlockEntityType<?> entityType,
                                                BlockPos pos, BlockState state,
+                                               ResourceLocation controllerId,
+                                               int baseParallel, int parallelLimit, int maxThreads) {
+        this(entityType, pos, state, baseParallel, parallelLimit, maxThreads);
+        setDefinition(controllerId);
+    }
+
+    public BlockEntityAbstractRecipeController(BlockEntityType<?> entityType,
+                                               BlockPos pos, BlockState state,
                                                ResourceLocation controllerId) {
         this(entityType, pos, state, controllerId, 1, -1, 1);
     }
-
 
     @Override
     public void setRemoved() {

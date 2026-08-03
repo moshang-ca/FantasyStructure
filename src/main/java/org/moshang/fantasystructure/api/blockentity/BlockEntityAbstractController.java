@@ -75,7 +75,7 @@ public abstract class BlockEntityAbstractController extends BlockEntity
     protected StructurePattern pattern;
     protected CompletableFuture<StructurePattern> patternFuture;
     @Getter @DescSynced
-    protected final FSStructureDefinitions.StructureDefinition definition;
+    protected FSStructureDefinitions.StructureDefinition definition;
     protected StructureState structureState;
     @Persisted
     protected final ExtendedItemStackHandler upgradeInv = new ExtendedItemStackHandler(4);
@@ -83,8 +83,12 @@ public abstract class BlockEntityAbstractController extends BlockEntity
     public BlockEntityAbstractController(BlockEntityType<?> entityType,
                                          BlockPos pos, BlockState state,
                                          ResourceLocation controllerId) {
+        this(entityType, pos, state);
+        setDefinition(controllerId);
+    }
+
+    public BlockEntityAbstractController(BlockEntityType<?> entityType, BlockPos pos, BlockState state) {
         super(entityType, pos, state);
-        this.definition = FSStructureDefinitions.DEFINITIONS.get(controllerId);
         this.upgradeInv.setOnContentsChanged(this::onUpgrade);
     }
 
@@ -93,6 +97,10 @@ public abstract class BlockEntityAbstractController extends BlockEntity
         this.structureState = null;
         this.pattern = null;
         this.patternFuture = null;
+    }
+
+    protected void setDefinition(ResourceLocation controllerId) {
+        this.definition = FSStructureDefinitions.DEFINITIONS.get(controllerId);
     }
 
     @Override
