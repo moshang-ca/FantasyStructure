@@ -93,7 +93,6 @@ public class MultiRecipeThread implements IEnhancedManaged {
                         completedFuture = supplyAsyncSearchTask();
                     }
                 } else {
-                    System.out.println("search recipe sync");
                     for(var r : searchRecipe()) {
                         for(var t : threads) {
                             if(t.isWorking()) continue;

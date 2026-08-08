@@ -29,7 +29,7 @@ import javax.annotation.ParametersAreNonnullByDefault;
 
 @ParametersAreNonnullByDefault
 @MethodsReturnNonnullByDefault
-public abstract class BlockAbstractBus<T extends BlockEntity & IBus> extends HorizontalDirectionalBlock implements EntityBlock {
+public abstract class BlockAbstractBus<T extends BlockEntity & IBus> extends HorizontalDirectionalBlock implements EntityBlock, IMorphingBlock {
     public static final EnumProperty<IO> IO_TYPE = EnumProperty.create("io_type", IO.class);
 
     public BlockAbstractBus(int strength, IO io) {

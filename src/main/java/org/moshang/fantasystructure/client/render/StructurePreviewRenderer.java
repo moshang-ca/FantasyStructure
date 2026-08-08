@@ -105,7 +105,9 @@ public class StructurePreviewRenderer {
 
         LEVEL = new PreviewDummyWorld();
         CompletableFuture.supplyAsync(() -> {
-            var patternInfo = controller.getPattern().blockPattern();
+            var pattern = controller.getStructurePattern();
+            if (pattern == null) return null;
+            var patternInfo = pattern.blockPattern();
             Long2ObjectOpenHashMap<BlockInfo> worldPattern = new Long2ObjectOpenHashMap<>();
 
             for(var entry : patternInfo.long2ObjectEntrySet()) {
@@ -119,7 +121,8 @@ public class StructurePreviewRenderer {
 
             if (LAST_POS != null && LAST_POS.equals(controllerPos)) {
                 LAST_LAYER++;
-                if (LAST_LAYER >= controller.getPattern().height()) {
+                //noinspection DataFlowIssue
+                if (LAST_LAYER >= controller.getStructurePattern().height()) {
                     LAST_LAYER = -1;
                 }
             } else {

@@ -48,7 +48,6 @@ public class FSKubeJSPlugin extends KubeJSPlugin {
     public void registerRecipeSchemas(RegisterRecipeSchemasEvent event) {
         super.registerRecipeSchemas(event);
         for (var recipeType : FSRecipes.RECIPE_TYPES) {
-            System.out.println("Registering recipe schema for " + recipeType.getRegistryName());
             event.register(recipeType.getRegistryName(), FSRecipeSchema.SCHEMA);
         }
     }

@@ -10,6 +10,7 @@ import com.lowdragmc.lowdraglib.gui.widget.*;
 import com.lowdragmc.lowdraglib.gui.widget.custom.PlayerInventoryWidget;
 import com.lowdragmc.lowdraglib.syncdata.IEnhancedManaged;
 import com.lowdragmc.lowdraglib.syncdata.IManagedStorage;
+import com.lowdragmc.lowdraglib.syncdata.ISubscription;
 import com.lowdragmc.lowdraglib.syncdata.annotation.DescSynced;
 import com.lowdragmc.lowdraglib.syncdata.annotation.Persisted;
 import com.lowdragmc.lowdraglib.syncdata.annotation.RPCMethod;
@@ -27,12 +28,19 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraftforge.client.model.data.ModelData;
+import net.minecraft.client.renderer.texture.TextureAtlasSprite;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.moshang.fantasystructure.FantasyStructure;
 import org.moshang.fantasystructure.api.slot.ExtendedItemStackHandler;
+import org.moshang.fantasystructure.client.model.MorphingModelData;
+import org.moshang.fantasystructure.client.render.MorphingHelper;
 import org.moshang.fantasystructure.data.StructureState;
 import org.moshang.fantasystructure.data.save.StructureWorldSavedData;
 import org.moshang.fantasystructure.helper.StructurePattern;
@@ -79,6 +87,7 @@ public abstract class BlockEntityAbstractController extends BlockEntity
     protected StructureState structureState;
     @Persisted
     protected final ExtendedItemStackHandler upgradeInv = new ExtendedItemStackHandler(4);
+    private ISubscription modelDataSubscription;
 
     public BlockEntityAbstractController(BlockEntityType<?> entityType,
                                          BlockPos pos, BlockState state,
@@ -106,6 +115,10 @@ public abstract class BlockEntityAbstractController extends BlockEntity
     @Override
     public void onLoad() {
         super.onLoad();
+        if (modelDataSubscription == null) {
+            modelDataSubscription = addSyncUpdateListener("formed", (name, newValue, oldValue)
+                    -> MorphingHelper.refreshModelData(BlockEntityAbstractController.this));
+        }
         if (level != null && !level.isClientSide) {
             ServerLevel serverLevel = (ServerLevel) level;
             var savedData = StructureWorldSavedData.getOrCreate(serverLevel);
@@ -120,7 +133,11 @@ public abstract class BlockEntityAbstractController extends BlockEntity
 
     @Override
     public void setRemoved() {
-        if(level instanceof ServerLevel serverLevel && structureState != null) {
+        if (modelDataSubscription != null) {
+            modelDataSubscription.unsubscribe();
+            modelDataSubscription = null;
+        }
+        if (level instanceof ServerLevel serverLevel && structureState != null) {
             var savedData = StructureWorldSavedData.getOrCreate(serverLevel);
             savedData.removeStructure(worldPosition);
         }
@@ -129,27 +146,32 @@ public abstract class BlockEntityAbstractController extends BlockEntity
     }
 
     public void serverTick() {
-        if(level == null || level.isClientSide) return;
+        if (level == null || level.isClientSide) return;
 
-        if(structureState != null) {
-            boolean wasFormed = this.formed;
-            boolean isValid = structureState.tickCheck(level);
+        STRUCTURE_STATE_VALIDATION: {
+            if (structureState != null) {
+                boolean wasFormed = this.formed;
+                boolean isValid = structureState.tickCheck(level);
 
-            if(wasFormed != isValid) {
-                setFormed(isValid);
-            }
-            if(isValid) {
-                serverTickInternal();
-            }
-        } else {
-            if(patternFuture != null && patternFuture.isDone()) {
-                try {
-                    pattern = patternFuture.get();
-                    createStructureState();
-                } catch (Exception e) {
-                    FantasyStructure.LOGGER.error("Error while getting pattern", e);
-                    patternFuture = null;
-                    initPattern();
+                if (wasFormed != isValid) {
+                    setFormed(isValid);
+                }
+                if (isValid) {
+                    serverTickInternal();
+                }
+            } else {
+                if (definition == null) {
+                    break STRUCTURE_STATE_VALIDATION;
+                }
+                if (patternFuture != null && patternFuture.isDone()) {
+                    try {
+                        pattern = patternFuture.get();
+                        createStructureState();
+                    } catch (Exception e) {
+                        FantasyStructure.LOGGER.error("Error while getting pattern", e);
+                        patternFuture = null;
+                        initPattern();
+                    }
                 }
             }
         }
@@ -158,7 +180,7 @@ public abstract class BlockEntityAbstractController extends BlockEntity
     protected void serverTickInternal() {}
 
     protected void initPattern() {
-        if(patternFuture != null && !patternFuture.isDone()) return;
+        if (patternFuture != null && !patternFuture.isDone()) return;
         if (pattern == null && getLevel() != null && !getLevel().isClientSide) {
             var facing = getBlockState().getValue(BlockStateProperties.HORIZONTAL_FACING);
             this.patternFuture = CompletableFuture.supplyAsync(
@@ -189,16 +211,20 @@ public abstract class BlockEntityAbstractController extends BlockEntity
     public void onUpgrade() {}
 
     public void onFormed() {
-        structureState.notifyAllComponents(formed);
+        if (structureState != null) {
+            structureState.notifyAllComponents(formed);
+        }
     }
 
     public void onDeformed(boolean isRemoved) {
-        structureState.notifyAllComponents(!isRemoved && formed);
+        if (structureState != null) {
+            structureState.notifyAllComponents(!isRemoved && formed);
+        }
     }
 
     public void autoBuild(ItemStack builderStack, boolean isCreative) {
-        if(pattern == null) initPattern();
-        if(level != null && !level.isClientSide) {
+        if (pattern == null) initPattern();
+        if (level != null && !level.isClientSide) {
             StructureBuilderManager.startBuild(level, worldPosition, this.pattern, builderStack, isCreative);
         }
     }
@@ -207,7 +233,7 @@ public abstract class BlockEntityAbstractController extends BlockEntity
      * Children should override this to implement their own UI.
      * Default implementation returns a basic UI with a player inventory.
      *
-     * @return The root widget of the UI
+     * @return root The root widget of the UI
      */
     protected WidgetGroup createUI() {
         var root = new WidgetGroup();
@@ -257,6 +283,10 @@ public abstract class BlockEntityAbstractController extends BlockEntity
         if(this.formed == formed) return;
         this.formed = formed;
 
+        if(level != null && level.isClientSide) {
+            MorphingHelper.refreshModelData(this);
+        }
+
         if(formed) onFormed();
         else onDeformed(false);
 
@@ -267,7 +297,13 @@ public abstract class BlockEntityAbstractController extends BlockEntity
         }
     }
 
-    public StructurePattern getPattern() {
+    public ResourceLocation getPatternId() {
+        return definition.patternId();
+    }
+
+    @Nullable
+    public StructurePattern getStructurePattern() {
+        if (definition == null) return null;
         if(level != null && level.isClientSide) {
             return BlueprintManager.getPattern(definition.patternId(),
                     getBlockState().getOptionalValue(HorizontalDirectionalBlock.FACING).orElse(Direction.NORTH));
@@ -276,7 +312,30 @@ public abstract class BlockEntityAbstractController extends BlockEntity
         }
     }
 
-    public ResourceLocation getPatternId() {
-        return definition.patternId();
+    @Override
+    public @NotNull ModelData getModelData() {
+        if (level == null || !level.isClientSide) {
+            return ModelData.EMPTY;
+        }
+        Block block = getBlockState().getBlock();
+        TextureAtlasSprite overlay = MorphingHelper.resolveOverlaySprite(block);
+        TextureAtlasSprite overlayFormed = MorphingHelper.resolveOverlayFormedSprite(block);
+        if (!formed) {
+            return MorphingModelData.build(false, null, null, overlay, overlayFormed);
+        }
+        StructurePattern pattern = getStructurePattern();
+        if (pattern == null) {
+            return MorphingModelData.build(true, null, null, overlay, overlayFormed);
+        }
+        Block overall = MorphingHelper.findDominantNeighbor(level, worldPosition, pattern, worldPosition);
+        Block[] perFace = MorphingHelper.findDominantPerFace(level, worldPosition, pattern, worldPosition);
+        TextureAtlasSprite overallSprite = overall == null ? null : MorphingHelper.resolveSprite(overall);
+        TextureAtlasSprite[] faceSprites = new TextureAtlasSprite[6];
+        for (int i = 0; i < 6; i++) {
+            if (perFace[i] != null) {
+                faceSprites[i] = MorphingHelper.resolveSprite(perFace[i]);
+            }
+        }
+        return MorphingModelData.build(true, overallSprite, faceSprites, overlay, overlayFormed);
     }
 }

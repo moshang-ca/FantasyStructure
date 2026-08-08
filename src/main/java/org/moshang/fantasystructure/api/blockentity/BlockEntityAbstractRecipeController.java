@@ -133,11 +133,15 @@ public abstract class BlockEntityAbstractRecipeController extends BlockEntityAbs
 
     @Override
     public void onFormed() {
-        resetRecipeCapabilityProxies();
+        super.onFormed();
+        if (structureState != null) {
+            resetRecipeCapabilityProxies();
+        }
     }
 
     @Override
     public void onDeformed(boolean deformed) {
+        super.onDeformed(deformed);
         recipeCapabilityProxies.clear();
         maxParallel = baseParallel;
         // dropAllParallel();

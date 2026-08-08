@@ -31,7 +31,7 @@ import java.util.function.Supplier;
 @SuppressWarnings("deprecation")
 @ParametersAreNonnullByDefault
 @MethodsReturnNonnullByDefault
-public abstract class BlockAbstractController<T extends BlockEntityAbstractController> extends HorizontalDirectionalBlock implements EntityBlock {
+public abstract class BlockAbstractController<T extends BlockEntityAbstractController> extends HorizontalDirectionalBlock implements EntityBlock, IMorphingBlock {
     private final Supplier<BlockEntityType<T>> blockEntityTypeSupplier;
     private final Supplier<ResourceLocation> controllerIdSupplier;
 
